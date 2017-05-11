@@ -1,0 +1,41 @@
+% document definition 
+\documentclass[a4paper,11pt]{article} 
+
+% create the following file in the input from the template
+\input{PaperInformation}
+\input{Preamble}
+\input{Macro}
+
+\begin{document}
+
+\singlespacing
+% create title template
+\pagenumbering{gobble}
+\input{Title}
+
+\onehalfspacing
+\pagenumbering{roman}
+
+% table of contents, figures and tables
+\tableofcontents
+\newpage
+
+\pagenumbering{arabic}
+% document content begin here
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\rightmark}
+\rhead{\leftmark}
+\lfoot{\PaperSubject}
+\rfoot{\thepage}
+\renewcommand{\footrulewidth}{1pt}
+\input{01Introduction}
+\input{02ProblemDescription}
+\input{03ProjectPlan}
+
+% create bibtex document
+\input{BibSetting}
+
+\end{document}
+
+
