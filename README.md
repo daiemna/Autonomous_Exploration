@@ -2,3 +2,4 @@ This is the repository for Research and Development Project "Autonomous Explorat
 
 1. currently the proposal is in .odt format.
 1. switching from word file to tex format.
+1. xmind mind map for research so far.
