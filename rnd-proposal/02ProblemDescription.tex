@@ -1,7 +1,10 @@
 \section{Problem Description}
 
 \subsection{Problem Addressed}
+Our objective is to implement exploration scheme for ground mobile robot, which enables it to autonomously explore the given indoor environment using its perception sensors (e.g laser scanners or Ultrasonic Range finder). Using these laser scans the robot should be able to build a 2D map of the surroundings . The end result of this endeavor will be a module which is able to devise an exploration strategy. The efficiency of the exploration strategy is also a concern which can be measured using matrices proposed in \cite{Juliae2012}. \par
+An exploration strategy is simply a series of nodes of a graph connected by straight line, In which each node represents a position(which is a pair of Cartesian-Coordinates in a 2D map) to be visited by the robot. If the robot visits all nodes in the given sequence, it has completed exploration according to given strategy(Fro example look at Figure 1). On the low-level these coordinates can be translated to the series of commands which are to be executed by drive of the robot, which can vary from robot to robot.\par
 
+\picHereWidth{map_example.png}{Example of an in-door environment \cite{Moorehead2001} \textit{left:} original structure of the real in-door environment with x representing the starting position of the robot. \textit{right:} explored map: with crosses representing the visited positions by the robot.}{Figure 1}{scale=0.7}
 
 \subsection{Approach}
 
