@@ -3,12 +3,14 @@
 \subsection{Problem Addressed}
 Our objective is to implement exploration scheme for ground mobile robot, which enables it to
 autonomously explore the given indoor environment using its perception sensors.
-Using these laser scans the robot should be able to build a 2D map of the surroundings .
-The end result of this endeavor will be a module which is able to devise an exploration strategy.
+Using these laser scans the robot should be able to build a 2D map of the surroundings.
+The end result of this endeavor will be a module which is able to devise an exploration plan.
 The efficiency of the exploration strategy is also a concern which can be measured using matrices
-proposed in \cite{Juliae2012}. \par
-
-
+proposed in \cite{Juliae2012}.
+\par
+Formally \textit{Occupancy Grid Maps} represent the occupation probability of each zone of the
+environment within a grid \cite{Juliae2012}. One of the reasons of choosing a strategy is that
+it can work with occupancy grids.
 
 \subsection{Approach}
 
