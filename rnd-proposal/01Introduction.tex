@@ -18,7 +18,7 @@ Aforementioned constraints are satisfied by different exploration strategies. An
 strategy} is a general method of devising an exploration plan. It is not necessary that a complete
 plan is generated before execution, usually explorers follow a analysis-execution loop , in which
 they analyze based on sensory information which direction to go and then execute motion according to
-the direction. A number of exploration strategies are mention in next section with there advantages.
+the direction. A number of exploration strategies are mentioned in next section with there advantages.
 For simplicity we are concentrating on single robot-exploration, not all but some of the strategies
 are scale-able to multi robot teams by adding knowledge sharing amongst robots. \par
 
@@ -54,16 +54,17 @@ view is the point of maximum exposure of the robot. Authors also suggest an indi
 specular reflection problem of the ultrasonic sensors.\par
 
 Newman et. al. in \cite{Newman2003} devised a feature based autonomous exploration technique, which
-integrates features to reduce the uncertainty in the SLAM. Features are select by novelty check
+integrates features to reduce the uncertainty in the SLAM. Features are selected by novelty check
 which in-turn makes the robot to explore unexplored areas. This algorithm is an example of
-'Integrated' algorithm suggested by \cite{Juliae2012}.\par
+'Integrated Exploration Algorithm' suggested by \cite{Juliae2012}.\par
 
-A technique developed for the multi-robot system by \cite{Burgard2005}, which also works for single robot does
-cost of analysis of exploring a frontier. It is interesting to know that cost is not computed over
-the straight line distance between robot and frontier but rather cells required to traverse till
-frontier. It also computes the utility of the frontier and choses the frontier with maximum utility
-and least cost, for multi-agent system the utility of a frontier is reduced every time a robot is
-assigned to it. They also consider limited communication distance scenario in a robot team.\par
+A technique developed for the multi-robot system by \cite{Burgard2005}, which also works for single
+robot does cost of analysis of exploring a frontier. It is interesting to know that cost is not
+computed over the straight line distance between robot and frontier, but rather cells required to
+traverse till frontier. It also computes the utility of the frontier and choses the frontier with
+maximum utility and least cost, for multi-agent system the utility of a frontier is reduced every
+time a robot is assigned to it. They also consider limited communication distance scenario in a
+robot team.\par
 
 Stachniss et. al.\cite{Stachniss2005} consider information gain in exploring a frontier. The concept
 is little similar to Burgard et. al., but the utility of a frontier is the amount of information
