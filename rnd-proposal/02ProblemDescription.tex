@@ -11,19 +11,32 @@ proposed in \cite{Yan2015}.
 Formally \textit{Occupancy Grid Maps} represent the occupation probability of each zone of the
 environment within a grid \cite{Juliae2012}. One of the reasons of choosing a strategy is that
 it can work with occupancy grids. The mobile robots for which the autonomous exploration is needed
-are care-o-bot and you-bot which are actively used by RoboCup @Home and @Work team in
+are care-o-bot and you-bot which are actively used by RoboCup @Home and @Work team respectively at
 Bonn-Rhein-Sieg University of Applied Science.
 
 \subsection{Approach}
-Following is just an abstract, please comment:
 \begin{itemize}
-	\item choose metrics of comparison for @home or @work.
-	\item setup a simulator for testing.
-	\item choose and implement a nearest frontier base explorer.
-	\item choose and implement a cost-utility based explorer, which is an extension of frontier based
-	algorithm.
-	\item choose and implement a RL based explorer, would need a lot of time for parameter tuning here.
-	\item compare by decided metrics.
+
+\item We need to choose metrics of comparison for @Home or @Work scenarios. Mostly in at @Home
+competitions max map coverage is required in least amount of time. In @Work competitions we need
+accurate maps, with reduced uncertainty, so we need to choose between colliding metrics of interest
+proposed by \cite{Yan2015}.
+
+\item We also need to setup a simulation environments, which are intended for testing. The chosen
+algorithms will be first trialled and tested in simulation and then on individual robots (care-o-bot
+or you-bot).
+
+\item Base on the assessment presented in the by \cite{Juliae2012} and \cite{Yan2015}
+we need chose algorithms according to conflicting interests in the metrics. As an example we require
+fast exploration in @Home and according to Juliae et. al. Nearest Frontier is the best candidate for
+that.
+
+ \item One target of this endeavor is to solve this complex control problem by Reinforcement
+Learning(RL). We need chose an RL algorithm which can work with continuous action space since
+position and heading are continuous variables. Also, we need to tune the algorithm parameters to
+work in individual scenarios of @Home and @Work.
+
+\item At the end the chosen RL algorithm must be compared with other best contenders of their domain.
 \end{itemize}
 
 % \subsection{Use Cases}
@@ -32,7 +45,7 @@ Following is just an abstract, please comment:
 \begin{itemize}
 	\item Minimum:
 	\begin{itemize}
-		\item Autonomous Exploration with frontier cost-utility.
+		\item Autonomous Exploration with best algorithms accessed by chosen metrics.
 	\end{itemize}
 	\item Expected:
 	In addition to the above:
@@ -42,6 +55,6 @@ Following is just an abstract, please comment:
 	\item Maximum:
 	In addition to the above:
 	\begin{itemize}
-		\item Comparison of both RL vs. cost-utility 
+		\item Comparison of both RL vs. cost-utility
 	\end{itemize}
 \end{itemize}
