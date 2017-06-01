@@ -17,24 +17,32 @@ Bonn-Rhein-Sieg University of Applied Science.
 \subsection{Approach}
 \begin{itemize}
 
-\item We need to choose metrics of comparison for @Home or @Work scenarios. Mostly in at @Home
-competitions max map coverage is required in least amount of time. In @Work competitions we need
-accurate maps, with reduced uncertainty, so we need to choose between colliding metrics of interest
-proposed by \cite{Yan2015}.
+\item We need to choose metrics of comparison for different exploration algorithms. In domestic
+scenario it would be required of the system that it can explore the complete floor of the hospital.
+simultaneously for an autonomous robot working in an industry precise map building with accurate
+machine and work stations positions is crucial, so we need to find a trade-off between colliding
+metrics of interest proposed by \cite{Yan2015}.
 
 \item We also need to setup a simulation environments, which are intended for testing. The chosen
-algorithms will be first trialled and tested in simulation and then on individual robots (care-o-bot
-or you-bot).
+algorithms will be first trialled and tested in simulation and then on individual robots. the target
+is to find a general exploration algorithm which can work in any virtual or real surroundings.
 
-\item Base on the assessment presented in the by \cite{Juliae2012} and \cite{Yan2015}
-we need chose algorithms according to conflicting interests in the metrics. As an example we require
-fast exploration in @Home and according to Juliae et. al. Nearest Frontier is the best candidate for
-that.
+\item Based on the assessment presented by \cite{Juliae2012} and \cite{Yan2015} we need to chose
+algorithms according to conflicting interests in the metrics. As an example we require fast
+exploration in huge environments like hospitals and according to Juliae et. al. Nearest Frontier is
+the best candidate for that, but for a precision critical problem accuracy in SLAM is more
+important. In the SLAM integrated exploration, we need loop closures and multiple readings of
+interesting features(land marks) of the map.
 
  \item One target of this endeavor is to solve this complex control problem by Reinforcement
 Learning(RL). We need chose an RL algorithm which can work with continuous action space since
-position and heading are continuous variables. Also, we need to tune the algorithm parameters to
-work in individual scenarios of @Home and @Work.
+position and heading are continuous variables. Policy based methods are able to handle continuous
+control problem a good example of such method is Deterministic Policy Gradient(DPG). The state space
+of such a system will comprise of Occupancy Grid, sensor readings and uncertainty measure of the
+SLAM. simultaneously, we need to reward the system based on these parts, for instance to introduce
+obstacle avoidance we can reward the system based on the distance it kept from obstacles. Also, we
+can reward the system based on reduction in SLAM uncertainty. these are some integral parts of the
+reward system, nevertheless their are more Key Performance Indicators(KPIs) Which can be included.
 
 \item At the end the chosen RL algorithm must be compared with other best contenders of their domain.
 \end{itemize}
