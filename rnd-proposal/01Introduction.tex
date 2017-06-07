@@ -72,6 +72,14 @@ gain of the Rao-Blackwellized particle filter(RBPF). They also consider the util
 taken to the frontier, which is affected by the gain of the path traversed. For example gain of the
 path is greater which causes loop-closure in the SLAM process. \par
 
+It is also possible to model the exploration problem as a partially observable Markov-Decision
+Process(POMDP) but attaining optimal policy is relatively difficult problem, which is tackled by
+Kollar et. al. in \cite{Kollar2008}. In this publication they use reinforcement learning to solve
+for optimal policy to build accurate maps and also increase map coverage. In fact they were able to
+find a balance between the to competing Key Performance Indicators(KPIs) i.e. map accuracy and short
+trajectories. The transfer of the learned policy from simulation to real system is one of the
+outstanding contributions of this research.\par
+
 All of the above mentioned algorithms can be evaluated with the help of the benchmarking metrics
 given by Yan et. al.\cite{Yan2015}. These metrics can be considered according to application for
 which the robots are needed, which is also the focus of Yan et. al. Most of the algorithm discussed
