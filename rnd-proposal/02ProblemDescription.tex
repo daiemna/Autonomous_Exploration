@@ -10,9 +10,8 @@ proposed in \cite{Yan2015}.
 \par
 Formally \textit{Occupancy Grid Maps} represent the occupation probability of each zone of the
 environment within a grid \cite{Juliae2012}. One of the reasons of choosing a strategy is that
-it can work with occupancy grids. The mobile robots for which the autonomous exploration is needed
-are care-o-bot and you-bot which are actively used by RoboCup @Home and @Work team respectively at
-Bonn-Rhein-Sieg University of Applied Science.
+it can work with occupancy grids. Exploration strategy also is aimed to be generic enough to work
+with any mobile robots in any scenario, rather be it industrial robots or domestic assistance robots
 
 \subsection{Approach}
 \begin{itemize}
@@ -39,7 +38,8 @@ Learning(RL). We need chose an RL algorithm which can work with continuous actio
 position and heading are continuous variables. Policy based methods are able to handle continuous
 control problem a good example of such method is Deterministic Policy Gradient(DPG). The state space
 of such a system will comprise of Occupancy Grid, sensor readings and uncertainty measure of the
-SLAM. simultaneously, we need to reward the system based on these parts, for instance to introduce
+SLAM.
+\item Simultaneously we need to reward the system based on these parts, for instance to introduce
 obstacle avoidance we can reward the system based on the distance it kept from obstacles. Also, we
 can reward the system based on reduction in SLAM uncertainty. these are some integral parts of the
 reward system, nevertheless their are more Key Performance Indicators(KPIs) Which can be included.
@@ -52,6 +52,12 @@ following are some KPIs explained in detail by Yan et. al. :
   \item exploration efficiency
   \item map quality
 \end{itemize}
+
+\item We aim to implement this reward system based on the map assessment KPIs, for this we can
+implement a KPI evaluation node in ROS(Robot Operation System). This node will also be used in
+assessment of the other exploration strategies. For example the map evaluation node can try to find
+a closing boundary in an incomplete map, till it does not find an enclosing boundary it will output
+reward '0'. As soon as the node finds the enclosing boundary it can reward the system +1.
 
 \item At the end the chosen RL algorithm must be compared with other best contenders of their domain.
 \end{itemize}
