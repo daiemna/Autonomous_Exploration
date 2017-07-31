@@ -1,0 +1,28 @@
+# Temp files
+*~
+*.swp
+
+# Eclipse
+.autotools
+.cproject
+.project
+.settings/
+
+# Python
+.pydevproject
+*.pyc
+
+# Java
+.classpath
+.gradle/
+.idea/
+
+# Doxygen
+html/
+latex/
+
+rospack_nosubdirs
+
+bin/
+build/
+install/

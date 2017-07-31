@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Running setcap for youbot_driver_ros_interface..."
+setcap cap_net_raw+ep /opt/ros/indigo/lib/youbot_driver_ros_interface/youbot_driver_ros_interface

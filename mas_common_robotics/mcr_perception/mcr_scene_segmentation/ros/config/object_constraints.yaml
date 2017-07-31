@@ -1,0 +1,19 @@
+# reasonable parameters for @Work objects
+tabletop_cloud_accumulator:
+    min_height: 0.01
+    max_height: 0.10
+    accumulation_timeout: 5
+    accumulate_clouds: 1
+    octree_resolution: 0.0025
+tabletop_cloud_clusterer:
+    outlier_radius: 0.03
+    outlier_neighbours: 20
+    cluster_tolerance: 0.02
+    object_min_height: 0.011
+    object_max_height: 0.09
+    min_distance_to_polygon: 0.04 # it was 0.03 before
+    min_cluster_size: 25
+    max_cluster_size: 20000
+    max_length: 0.25
+
+

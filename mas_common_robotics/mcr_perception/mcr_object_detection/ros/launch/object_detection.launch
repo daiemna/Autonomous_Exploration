@@ -1,0 +1,57 @@
+<?xml version="0.0"?>
+<launch>
+  <arg name="manager" default="workspace_finder_manager" />
+  <arg name="workspace_finder_config_file" default="$(find mcr_scene_segmentation)/ros/config/workspace_constraints.yaml" />
+  <arg name="object_constraints_config_file" default="$(find mcr_scene_segmentation)/ros/config/object_constraints.yaml" />
+  <arg name="input_pointcloud_topic" default="/arm_cam3d/depth_registered/points" />
+  <arg name="use_cloud_accumulator" default="false" />
+  <arg name="mux_output_topic" default="/mcr_perception/depth_registered/points" />
+  <arg name="camera_frame" default="arm_cam3d_rgb_optical_frame" />
+  <arg name="target_frame" default="/base_link" />
+
+  <!-- This launch file brings up the nodes from mcr_scene_segmentation that are needed for object detection and the object detector itself.
+       The parameters have been adjusted to work well with @Work scenarios. -->
+
+  <group ns="mcr_perception">
+      <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
+
+      <node pkg="nodelet" type="nodelet" name="mux_pointcloud"
+          args="load mcr_topic_tools/TopicMux $(arg manager) mux:=mux_pointcloud $(arg mux_output_topic) /empty_topic $(arg input_pointcloud_topic)"  output="screen">
+          <param name="lazy" type="bool" value="true" />
+      </node> 
+  </group>
+
+  <group if="$(arg use_cloud_accumulator)">
+    <include file="$(find mcr_scene_segmentation)/ros/launch/cloud_accumulator.launch" >
+      <arg name="input_pointcloud_topic" value="$(arg mux_output_topic)" />
+    </include>
+
+    <include file="$(find mcr_scene_segmentation)/ros/launch/scene_segmentation.launch" >
+      <arg name="workspace_finder_config_file" value="$(arg workspace_finder_config_file)" />
+      <arg name="object_constraints_config_file" value="$(arg object_constraints_config_file)" />
+      <arg name="input_pointcloud_topic" value="/mcr_perception/cloud_accumulator/output" />
+      <arg name="camera_frame" default="$(arg camera_frame)" />
+    </include>
+
+    <node pkg="mcr_object_detection" type="object_detector" name="object_detector" output="screen" ns="mcr_perception">
+      <param name="target_frame" type="string" value="$(arg target_frame)" />
+      <param name="input_pointcloud_topic" type="string" value="/mcr_perception/cloud_accumulator/output" />
+    </node>
+  </group>
+
+  <group unless="$(arg use_cloud_accumulator)">
+    <include file="$(find mcr_scene_segmentation)/ros/launch/scene_segmentation.launch" >
+      <arg name="workspace_finder_config_file" value="$(arg workspace_finder_config_file)" />
+      <arg name="object_constraints_config_file" value="$(arg object_constraints_config_file)" />
+      <arg name="input_pointcloud_topic" value="$(arg mux_output_topic)" />
+      <arg name="camera_frame" default="$(arg camera_frame)" />
+    </include>
+
+    <node pkg="mcr_object_detection" type="object_detector" name="object_detector" output="screen" ns="mcr_perception">
+      <param name="target_frame" type="string" value="$(arg target_frame)" />
+      <param name="input_pointcloud_topic" type="string" value="$(arg mux_output_topic)" />
+    </node>
+
+  </group>
+
+</launch>

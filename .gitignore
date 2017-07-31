@@ -1,0 +1,7 @@
+# ros install
+/.rosinstall
+/.rosinstall.bak
+/setup.bash
+/setup.sh
+/setup.zsh
+/CMakeLists.txt

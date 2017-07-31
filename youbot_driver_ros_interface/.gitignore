@@ -1,0 +1,7 @@
+# Eclipse files
+.autotools
+.cproject
+.project
+
+# temporary files
+*~

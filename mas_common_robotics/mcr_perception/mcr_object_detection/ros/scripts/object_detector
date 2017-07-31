@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+
+NODE = 'object_detector'
+
+import mcr_object_detection.service_states
+import mcr_object_detection.topic_states
+
+import rospy
+import numpy as np
+from smach import State, StateMachine
+from tf.transformations import quaternion_from_matrix
+import tf
+
+from mcr_scene_segmentation.label_visualizer import LabelVisualizer
+from mcr_perception_msgs.msg import ObjectList
+from mcr_perception_msgs.msg import Object
+from mcr_perception_msgs.srv import RecognizeObject
+
+import std_msgs.msg
+import geometry_msgs.msg
+
+
+class FindWorkspaceAborted(State):
+    def __init__(self):
+        State.__init__(self,
+                       outcomes=['failed', 'retry'])
+        self.retries = 3
+
+    def execute(self, userdata):
+        rospy.logwarn('Failed to find workspace, will attempt %i retries.' %
+                      (self.retries))
+        if self.retries > 0:
+            self.retries -= 1
+            return 'retry'
+        else:
+            self.retries = 3
+            return 'failed'
+
+
+class RecognizeObjects(State):
+    def __init__(self):
+        State.__init__(self,
+                       input_keys=['clusters', 'bounding_boxes', 'names', 'probabilities'],
+                       output_keys=['names', 'probabilities'],
+                       outcomes=['done'])
+        self.label_vis = LabelVisualizer('/visualization_marker_array', 'teal')
+        try:
+            rospy.wait_for_service('/mcr_perception/object_recognizer/recognize_object', timeout=5)
+            self.recognize = rospy.ServiceProxy('/mcr_perception/object_recognizer/recognize_object',
+                                                RecognizeObject)
+        except rospy.ROSException:
+            rospy.logwarn('Object recognition service is not available, '
+                          'will return "unknown" for all objects.')
+            self.recognize = None
+
+    def execute(self, ud):
+        ud.names = list()
+        ud.probabilities = list()
+        for c, b in zip(ud.clusters, ud.bounding_boxes):
+            if not self.recognize is None:
+                response = self.recognize(c, b.dimensions)
+                name = response.name
+                probability = response.probability
+            else:
+                name = 'unknown'
+                probability = 0.0
+            ud.names.append(name)
+            ud.probabilities.append(probability)
+        if ud.names:
+            self.label_vis.publish(ud.names,
+                                   [b.center for b in ud.bounding_boxes],
+                                   ud.clusters[0].header.frame_id)
+        return 'done'
+
+
+class PackResponse(State):
+    def __init__(self):
+        State.__init__(self,
+                       input_keys=['clusters',
+                                   'bounding_boxes',
+                                   'names',
+                                   'probabilities',
+                                   'response'],
+                       output_keys=['response'],
+                       outcomes=['done'])
+        self.object_id = 0
+        self.tf_listener = tf.TransformListener()
+        self.target_frame_id = rospy.get_param("~target_frame")
+
+    def execute(self, ud):
+        ud.response = ObjectList()
+        for c, b, n, p in zip(ud.clusters, ud.bounding_boxes, ud.names, ud.probabilities):
+            obj = Object()
+            q = self.get_orientation(b.vertices)
+            obj.dimensions.vector = b.dimensions
+
+            obj_pose = geometry_msgs.msg.PoseStamped()
+            obj_pose.header = c.header
+            obj_pose.pose.position = b.center
+            obj_pose.pose.orientation.x = q[0]
+            obj_pose.pose.orientation.y = q[1]
+            obj_pose.pose.orientation.z = q[2]
+            obj_pose.pose.orientation.w = q[3]
+
+            if self.target_frame_id:
+                try:
+                    common_time = self.tf_listener.getLatestCommonTime(self.target_frame_id, obj_pose.header.frame_id)
+                    obj_pose.header.stamp = common_time
+
+                    self.tf_listener.waitForTransform(
+                        self.target_frame_id, obj_pose.header.frame_id,
+                        obj_pose.header.stamp, rospy.Duration(0.1)
+                    )
+
+                    obj_pose = self.tf_listener.transformPose(self.target_frame_id, obj_pose)
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    rospy.logerr('Unable to transform %s -> %s' % (obj_pose.header.frame_id, self.target_frame_id))
+                    continue
+
+            obj.pose = obj_pose
+            obj.name = n
+            obj.bounding_box = b
+            obj.database_id = self.object_id
+            obj.probability = p
+            ud.response.objects.append(obj)
+            self.object_id = self.object_id + 1
+        return 'done'
+
+    def get_orientation(self, box):
+        to_array = lambda msg: np.array([msg.x, msg.y, msg.z])
+        n1 = to_array(box[4]) - to_array(box[0])
+        n2 = to_array(box[1]) - to_array(box[0])
+        n3 = to_array(box[3]) - to_array(box[0])
+
+        n1_norm = np.linalg.norm(n1)
+        n2_norm = np.linalg.norm(n2)
+        n3_norm = np.linalg.norm(n3)
+
+        normals = [n1, n2, n3]
+        normal_norm  = [n1_norm, n2_norm, n3_norm]
+
+        # x-axis is always along the longest axis
+        max_norm_index = np.argmax(normal_norm)
+        x_norm = normals[max_norm_index] / normal_norm[max_norm_index]
+        del normals[max_norm_index]
+        del normal_norm[max_norm_index]
+
+        # if longest axis is along the height of the object (object is vertical)
+        # set y axis as second longest axis and z and the cross product of x and y
+        if max_norm_index == 0:
+            max_norm_index = np.argmax(normal_norm)
+            y_norm = normals[max_norm_index] / normal_norm[max_norm_index]
+            z_norm = np.cross(x_norm, y_norm)
+        else:
+            # if longest axis is lying on the plane (object is horizontal)
+            # set z-axis pointing up and y-axis as the cross of z and x
+            z_norm = n1 / n1_norm
+            y_norm = np.cross(z_norm, x_norm)
+
+        n1 = x_norm
+        n2 = y_norm
+        n3 = z_norm
+
+        m = np.array([[n1[0], n2[0], n3[0], 0],
+                      [n1[1], n2[1], n3[1], 0],
+                      [n1[2], n2[2], n3[2], 0],
+                      [0,     0,     0,     1]])
+        return quaternion_from_matrix(m)
+
+
+class PublishTf(State):
+    def __init__(self):
+        State.__init__(self,
+                       outcomes=['done'],
+                       input_keys=['response'])
+        self.tf = tf.TransformBroadcaster()
+
+    def execute(self, ud):
+        for i, obj in enumerate(ud.response.objects):
+            p = obj.pose.pose.position
+            q = obj.pose.pose.orientation
+            self.tf.sendTransform((p.x, p.y, p.z), (q.x, q.y, q.z,q.w),
+                                  rospy.Time.now(), 'object_%i' % i,
+                                  obj.pose.header.frame_id)
+        return 'done'
+
+
+if __name__ == '__main__':
+    rospy.init_node(NODE)
+    cloud_topic = rospy.get_param("~input_pointcloud_topic")
+    sm = StateMachine(outcomes=['succeeded', 'aborted', 'preempted'],
+                      output_keys=['response'])
+    with sm:
+        StateMachine.add('SUBSCRIBE_TO_POINTCLOUD',
+                         mcr_object_detection.topic_states.PointCloudSubscription(True, cloud_topic),
+                         transitions={'done': 'FIND_WORKSPACE'})
+        StateMachine.add('FIND_WORKSPACE',
+                         mcr_object_detection.topic_states.FindWorkspace(),
+                         transitions={'succeeded': 'ACCUMULATE_CLOUD',
+                                      'aborted': 'FIND_WORKSPACE_ABORTED'})
+        StateMachine.add('FIND_WORKSPACE_ABORTED',
+                         FindWorkspaceAborted(),
+                         transitions={'retry': 'FIND_WORKSPACE',
+                                      'failed': 'UNSUBSCRIBE_FROM_POINTCLOUD_AND_ABORT'})
+        StateMachine.add('ACCUMULATE_CLOUD',
+                         mcr_object_detection.service_states.accumulate_tabletop_cloud,
+                         transitions={'succeeded': 'CLUSTER_CLOUD',
+				      'aborted':'UNSUBSCRIBE_FROM_POINTCLOUD_AND_ABORT'})
+        StateMachine.add('CLUSTER_CLOUD',
+                         mcr_object_detection.service_states.cluster_tabletop_cloud,
+                         transitions={'succeeded': 'MAKE_BOUNDING_BOXES'})
+        StateMachine.add('MAKE_BOUNDING_BOXES',
+                         mcr_object_detection.service_states.make_bounding_boxes,
+                         transitions={'succeeded': 'RECOGNIZE_OBJECTS'})
+        StateMachine.add('RECOGNIZE_OBJECTS',
+                         RecognizeObjects(),
+                         transitions={'done': 'PACK_RESPONSE'})
+        StateMachine.add('PACK_RESPONSE',
+                         PackResponse(),
+                         transitions={'done': 'PUBLISH_TF'})
+        StateMachine.add('PUBLISH_TF',
+                         PublishTf(),
+                         transitions={'done': 'UNSUBSCRIBE_FROM_POINTCLOUD'})
+        StateMachine.add('UNSUBSCRIBE_FROM_POINTCLOUD_AND_ABORT',
+                         mcr_object_detection.topic_states.PointCloudSubscription(False),
+                         transitions={'done': 'aborted'})
+        StateMachine.add('UNSUBSCRIBE_FROM_POINTCLOUD',
+                         mcr_object_detection.topic_states.PointCloudSubscription(False),
+                         transitions={'done': 'succeeded'})
+
+    def event_in_cb(data):
+        if data.data == "e_trigger":
+            rospy.loginfo('Received [detect_objects] request.')
+            outcome = sm.execute()
+            if outcome == 'succeeded':
+                object_list_pub.publish(sm.userdata.response)
+                event_out_pub.publish("e_done")
+            else:
+                event_out_pub.publish("e_failed")
+
+    object_list_pub = rospy.Publisher('~object_list', ObjectList, queue_size=1)
+    event_in_sub = rospy.Subscriber('~event_in', std_msgs.msg.String, event_in_cb)
+    event_out_pub = rospy.Publisher('~event_out', std_msgs.msg.String, queue_size=1)
+    rospy.loginfo('Started [detect_objects] node.')
+    rospy.spin()

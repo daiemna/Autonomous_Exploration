@@ -1,0 +1,28 @@
+<launch>
+
+  <arg name="manager" default="workspace_finder_manager" />
+  <arg name="input_pointcloud_topic" default="/arm_cam3d/depth_registered/points" />
+
+  <group ns="mcr_perception">
+
+    <node pkg="nodelet" type="nodelet" name="transform_odom"
+          args="load pcl/PassThrough $(arg manager)">
+      <!--remap from="~input" to="/arm_cam3d/depth_registered/points" /-->
+      <remap from="~input" to="$(arg input_pointcloud_topic)" />
+      <param name="filter_field_name" type="str" value="z" />
+      <param name="filter_limit_min" type="double" value="0.0" />
+      <param name="filter_limit_max" type="double" value="30.0" />
+      <param name="output_frame" type="str" value="/odom" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="cloud_accumulator"
+        args="load mcr_scene_segmentation/CloudAccumulatorNode $(arg manager)" output="screen">
+      <param name="octree_resolution" type="double" value="0.0025" />
+      <param name="event_based_termination" type="bool" value="false" />
+      <param name="clouds_to_accumulate" type="int" value="1" />
+      <param name="publish_period" type="double" value="0.1" />
+      <remap from="~input" to="/mcr_perception/transform_odom/output" />
+    </node>
+
+  </group>
+</launch>

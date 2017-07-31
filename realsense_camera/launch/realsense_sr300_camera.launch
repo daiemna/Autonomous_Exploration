@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="camera" default="camera" />
+    <arg name="realsense_camera_type" default="Intel(R) RealSense(TM) Camera S" />
+    <arg name="publish_frames" default="true" />
+
+    <arg name="rgb_camera_info_url" default="package://realsense_camera/config/sr300_rgb_calibration.yaml" />
+    <arg name="ir_camera_info_url" default="package://realsense_camera/config/sr300_ir_calibration.yaml" />
+
+    <include file="$(find realsense_camera)/launch/realsense_camera.launch">
+        <arg name="camera" value="$(arg camera)" />
+        <arg name="realsense_camera_type" value="$(arg realsense_camera_type)" />
+        <arg name="publish_frames" value="$(arg publish_frames)" />
+        <arg name="rgb_camera_info_url" value="$(arg rgb_camera_info_url)" />
+        <arg name="ir_camera_info_url" value="$(arg ir_camera_info_url)" />
+    </include>
+</launch>

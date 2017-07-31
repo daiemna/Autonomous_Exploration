@@ -1,0 +1,20 @@
+image_width: 1280
+image_height: 720
+camera_name: realsense_camera_rgb_
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [925.746, 0, 634.23, 0, 925.746, 361.534, 0, 0, 1]
+distortion_model: RS_DISTORTION_NONE
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0, 0, 0, 0, 0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [925.746, 0, 634.23, 0, 0, 925.746, 361.534, 0, 0, 0, 1, 0]

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="mcr_twist_limiter" type="twist_limiter_node"
+            name="twist_limiter" output="screen">
+
+        <!-- the cycle rate of the node (in Hz) -->
+        <param name="loop_rate" type="double" value="10"/>
+
+    </node>
+</launch>

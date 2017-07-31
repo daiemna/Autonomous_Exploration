@@ -1,0 +1,20 @@
+image_width: 640
+image_height: 480
+camera_name: realsense_camera_ir_
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [477.035, 0, 314.827, 0, 477.035, 245.978, 0, 0, 1]
+distortion_model: RS_DISTORTION_INVERSE_BROWN_CONRADY
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0.148489, -0.00520959, 0.00396396, 0.000202298, 0.21913]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [0.999999, 0.000943673, 0.000818494, -0.000941825, 0.999997, -0.00225561, -0.00082062, 0.00225484, 0.999997]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [477.035, 0, 314.827, 0.0257, 0, 477.035, 245.978, 0.00126674, 0, 0, 1, 0.00439834]
