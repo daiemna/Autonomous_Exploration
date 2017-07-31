@@ -33,6 +33,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseArray.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -84,7 +85,7 @@ public:
   bool findFrontiersCloseToPath(std::vector<geometry_msgs::PoseStamped> &frontiers);
   bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers);
   bool findInnerFrontier(std::vector<geometry_msgs::PoseStamped> &innerFrontier);
-  
+
   float angleDifferenceWall(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal);
   bool exploreWalls(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> &goals);
 
@@ -136,6 +137,7 @@ private:
   ros::Publisher goal_pose_pub_;
 
   ros::Publisher visualization_pub_;
+  ros::Publisher frontier_pub_;
   ros::ServiceClient path_service_client_;
   costmap_2d::Costmap2DROS* costmap_ros_;
   costmap_2d::Costmap2D* costmap_;
@@ -182,5 +184,3 @@ private:
 }
 
 #endif
-
-

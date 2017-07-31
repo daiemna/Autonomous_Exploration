@@ -84,6 +84,7 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
 
   observation_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("observation_pose", 1, true);
   goal_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("goal_pose", 1, true);
+  frontier_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("frontiers", 1, true);
 
   dyn_rec_server_.reset(new dynamic_reconfigure::Server<hector_exploration_planner::ExplorationPlannerConfig>(ros::NodeHandle("~/hector_exploration_planner")));
 
@@ -1162,6 +1163,10 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
         unsigned int explore_threshold = static_cast<unsigned int> (static_cast<double>(STRAIGHT_COST) * (1.0/costmap_->getResolution()) * p_close_to_path_target_distance_);
 
         //std::vector<geometry_msgs::PoseStamped> close_frontiers;
+        // check if there is a subcriber to frontier publisher.
+        bool publishing_frontiers = (frontier_pub_.getNumSubscribers() > 0);
+        ROS_DEBUG("findFrontiers : frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
+        std::vector<geometry_msgs::Pose> fronts;
 
         for(unsigned int i = 0; i < num_map_cells_; ++i){
 
@@ -1188,12 +1193,21 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
               finalFrontier.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
 
               frontiers.push_back(finalFrontier);
+              if(publishing_frontiers){
+                fronts.push_back(finalFrontier.pose);
+              }
 
             }
 
           }
         }
-
+        if(publishing_frontiers){
+          geometry_msgs::PoseArray frontiers_msg;
+          frontiers_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+          frontiers_msg.poses = fronts;
+          frontier_pub_.publish(frontiers_msg);
+          ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
+        }
         return frontiers.size() > 0;
 
 
@@ -1204,10 +1218,7 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
     }
   }
 
-
-
-
-
+  /*
   // list of all frontiers in the occupancy grid
   std::vector<int> allFrontiers;
 
@@ -1242,7 +1253,7 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
     //}
   }
 
-  return (frontiers.size() > 0);
+  return (frontiers.size() > 0);*/
 }
 
 /*
@@ -1257,16 +1268,22 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
   // list of all frontiers in the occupancy grid
   std::vector<int> allFrontiers;
 
+  // check if there is a subcriber to frontier publisher.
+  bool publishing_frontiers = (frontier_pub_.getNumSubscribers() > 0);
+  ROS_DEBUG("findFrontiers : frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
+  std::vector<geometry_msgs::Pose> fronts;
+
   // check for all cells in the occupancy grid whether or not they are frontier cells
   for(unsigned int i = 0; i < num_map_cells_; ++i){
     if(isFrontier(i)){
       allFrontiers.push_back(i);
     }
   }
-
   for(unsigned int i = 0; i < allFrontiers.size(); ++i){
     if(!isFrontierReached(allFrontiers[i])){
       geometry_msgs::PoseStamped finalFrontier;
+      // geometry_msgs::Pose front;
+
       double wx,wy;
       unsigned int mx,my;
       costmap_->indexToCells(allFrontiers[i], mx, my);
@@ -1284,14 +1301,27 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
       finalFrontier.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
 
       frontiers.push_back(finalFrontier);
+
+      if(publishing_frontiers){
+        // front =
+        fronts.push_back(finalFrontier.pose);
+      }
+
+
     }
     //}
   }
-
+  if(publishing_frontiers){
+    geometry_msgs::PoseArray frontiers_msg;
+    frontiers_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+    frontiers_msg.poses = fronts;
+    frontier_pub_.publish(frontiers_msg);
+    ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
+  }
   return (frontiers.size() > 0);
 
-  //@TODO: Review and possibly remove unused code below
-
+  //TODO: Review and possibly remove unused code below
+/*
   // value of the next blob
   int nextBlobValue = 1;
   std::list<int> usedBlobs;
@@ -1432,7 +1462,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
     }
 
   }
-  return !frontiers.empty();
+  return !frontiers.empty();*/
 }
 
 bool HectorExplorationPlanner::findInnerFrontier(std::vector<geometry_msgs::PoseStamped> &innerFrontier){
