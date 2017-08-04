@@ -105,8 +105,7 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
   obstacle_vis_.reset(new ExplorationTransformVis("obstacle_transform"));
 }
 
-void HectorExplorationPlanner::dynRecParamCallback(hector_exploration_planner::ExplorationPlannerConfig &config, uint32_t level)
-{
+void HectorExplorationPlanner::dynRecParamCallback(hector_exploration_planner::ExplorationPlannerConfig &config, uint32_t level){
   p_plan_in_unknown_ = config.plan_in_unknown;
   p_explore_close_to_path_ = config.explore_close_to_path;
   p_use_inflated_obs_ = config.use_inflated_obstacles;
@@ -129,7 +128,7 @@ bool HectorExplorationPlanner::makePlan(const geometry_msgs::PoseStamped &start,
 
   this->setupMapData();
 
-  // do exploration? (not used anymore? -> call doExploration())
+  // do exploration? (not used anymore? -> call doExploration)
 
   if ((original_goal.pose.orientation.w == 0.0) && (original_goal.pose.orientation.x == 0.0) &&
   (original_goal.pose.orientation.y == 0.0) && (original_goal.pose.orientation.z == 0.0)){
@@ -244,11 +243,11 @@ bool HectorExplorationPlanner::doExploration(const geometry_msgs::PoseStamped &s
     return doInnerExploration(start,plan);
   }
 
-  // make plan
+  // assigne cost to each frontier and its path
   if(!buildexploration_trans_array_(start,goals,true)){
     return false;
   }
-
+  // starting from current pose find the path to least costly frontier
   if(!getTrajectory(start,goals,plan)){
     ROS_INFO("[hector_exploration_planner] exploration: could not plan to frontier, starting inner-exploration");
     return doInnerExploration(start,plan);
@@ -357,8 +356,7 @@ bool HectorExplorationPlanner::doInnerExploration(const geometry_msgs::PoseStamp
   return true;
 }
 
-bool HectorExplorationPlanner::getObservationPose(const geometry_msgs::PoseStamped& observation_pose, const double desired_distance, geometry_msgs::PoseStamped& new_observation_pose)
-{
+bool HectorExplorationPlanner::getObservationPose(const geometry_msgs::PoseStamped& observation_pose, const double desired_distance, geometry_msgs::PoseStamped& new_observation_pose{
   // We call this from inside the planner, so map data setup and reset already happened
   //this->setupMapData();
   //resetMaps();
@@ -780,8 +778,7 @@ bool HectorExplorationPlanner::exploreWalls(const geometry_msgs::PoseStamped &st
   return !plan.empty();
 }
 
-void HectorExplorationPlanner::setupMapData()
-{
+void HectorExplorationPlanner::setupMapData(){
 
 #ifdef COSTMAP_2D_LAYERED_COSTMAP_H_
   costmap_ = costmap_ros_->getCostmap();
@@ -825,8 +822,7 @@ void HectorExplorationPlanner::setupMapData()
   occupancy_grid_array_ = costmap_->getCharMap();
 }
 
-void HectorExplorationPlanner::deleteMapData()
-{
+void HectorExplorationPlanner::deleteMapData(){
   exploration_trans_array_.reset();
   obstacle_trans_array_.reset();
   is_goal_array_.reset();
@@ -1023,7 +1019,7 @@ bool HectorExplorationPlanner::getTrajectory(const geometry_msgs::PoseStamped &s
   // setup start positions
   unsigned int mx,my;
 
-  if(!costmap_->worldToMap(start.pose.position.x,start.pose.position.y,mx,my)){
+  if(!costmap_->worldToMap(start.pose.position.x, start.pose.position.y, mx, my)){
     ROS_WARN("[hector_exploration_planner] The start coordinates are outside the costmap!");
     return false;
   }
@@ -1137,7 +1133,7 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
           double dx = lastPose.pose.position.x - pose.pose.position.x;
           double dy = lastPose.pose.position.y - pose.pose.position.y;
 
-          if((dx*dx) + (dy*dy) > (0.25*0.25)){
+          if((dx*dx) + (dy*dy) > (0.25*0.25)){ // 0.25^2 = 0.0625 What is this arbitary number.
             goals.push_back(pose);
             lastPose = pose;
           }
@@ -1251,9 +1247,9 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
       frontiers.push_back(finalFrontier);
     }
     //}
-  }
+  }*/
 
-  return (frontiers.size() > 0);*/
+  return (frontiers.size() > 0);
 }
 
 /*
