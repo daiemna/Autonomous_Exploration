@@ -87,7 +87,6 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
   observation_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("observation_pose", 1, true);
   goal_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("goal_pose", 1, true);
   frontier_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("frontiers", 1, true);
-
   cluster_pub_ = private_nh_.advertise<sensor_msgs::Image>("cluster_image", 1, true);
   cluster_image_counter = 0;
   dyn_rec_server_.reset(new dynamic_reconfigure::Server<hector_exploration_planner::ExplorationPlannerConfig>(ros::NodeHandle("~/hector_exploration_planner")));
@@ -127,6 +126,7 @@ void HectorExplorationPlanner::dynRecParamCallback(hector_exploration_planner::E
   p_cos_of_allowed_observation_pose_angle_ = cos(angle_rad);
   p_close_to_path_target_distance_ = config.close_to_path_target_distance;
   p_cluster_count_ = config.cluster_count;
+  p_sensor_range_ = config.sensor_range;
 }
 
 bool HectorExplorationPlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &original_goal, std::vector<geometry_msgs::PoseStamped> &plan){
@@ -253,6 +253,7 @@ bool HectorExplorationPlanner::doExploration(const geometry_msgs::PoseStamped &s
     return false;
   }
   // TODO : assigne utility value to each frontier.
+  build_frontier_utility_array_(goals);
   // starting from current pose find the path to least costly frontier
   if(!getTrajectory(start,goals,plan)){
     ROS_INFO("[hector_exploration_planner] exploration: could not plan to frontier, starting inner-exploration");
@@ -835,6 +836,53 @@ void HectorExplorationPlanner::deleteMapData(){
   frontier_map_array_.reset();
 }
 
+bool HectorExplorationPlanner::build_frontier_utility_array_(std::vector<geometry_msgs::PoseStamped> goals){
+  ROS_DEBUG("[hector_exploration_planner] build_frontier_utility_array_");
+  std::fill_n(utility_trans_array_.get(), num_map_cells_, 0);
+  std::queue<int> aqueue;
+  const int CELL_CONNECTIVITY=8;
+  for(unsigned int i = 0; i < goals.size(); ++i){
+    unsigned int mx,my;
+
+    if(!costmap_->worldToMap(goals[i].pose.position.x,goals[i].pose.position.y,mx,my)){
+      continue;
+    }
+
+    int goal_point = costmap_->getIndex(mx,my);
+
+    aqueue.push(goal_point);
+    std::vector<int> done_list;
+    unsigned int utility_value = utility_trans_array_[goal_point];
+    done_list.push_back(goal_point);
+
+    while (aqueue.size()) {
+      int point = aqueue.front();
+      aqueue.pop();
+
+      int adjacentPoints[CELL_CONNECTIVITY];
+      getAdjacentPoints(point,adjacentPoints);
+      std::vector<int>::iterator searchit;
+
+      for(unsigned int i = 0; i < CELL_CONNECTIVITY; ++i){
+        searchit = std::find(done_list.begin(), done_list.end(), adjacentPoints[i]);
+        bool is_point_unexplored = (occupancy_grid_array_[adjacentPoints[i]] == costmap_2d::NO_INFORMATION);
+        bool is_point_in_range = is_in_range(goal_point, adjacentPoints[i], p_sensor_range_);
+        if((searchit == done_list.end()) &&
+           isValid(adjacentPoints[i])){
+             done_list.push_back(adjacentPoints[i]);
+             if(is_point_in_range){
+               aqueue.push(adjacentPoints[i]);
+               if(is_point_unexplored){
+                 ++utility_value;
+               }
+             }
+        }
+      }
+    }
+    utility_trans_array_[goal_point] = utility_value;
+  }
+  return false;
+}
 
 bool HectorExplorationPlanner::buildexploration_trans_array_(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals, bool useAnglePenalty, bool use_cell_danger){
 
@@ -1700,22 +1748,37 @@ bool HectorExplorationPlanner::isFrontierReached(int point){
 }
 
 bool HectorExplorationPlanner::isSameFrontier(int frontier_point1, int frontier_point2){
+  double dist2 = get_distance(frontier_point1, frontier_point2, true);
+  if(dist2 < (p_same_frontier_dist_*p_same_frontier_dist_)){
+    return true;
+  }
+  return false;
+}
+
+bool HectorExplorationPlanner::is_in_range(int point1, int point2, const int range){
+  double range2 = (range*range);
+  double dist2 = get_distance(point1, point2, true);
+  if(dist2 <= range2){
+    return true;
+  }
+  return false;
+}
+
+double HectorExplorationPlanner::get_distance(int point1, int point2, bool get_sq_dist = true){
   unsigned int fx1,fy1;
   unsigned int fx2,fy2;
   double wfx1,wfy1;
   double wfx2,wfy2;
-  costmap_->indexToCells(frontier_point1,fx1,fy1);
-  costmap_->indexToCells(frontier_point2,fx2,fy2);
+  costmap_->indexToCells(point1,fx1,fy1);
+  costmap_->indexToCells(point2,fx2,fy2);
   costmap_->mapToWorld(fx1,fy1,wfx1,wfy1);
   costmap_->mapToWorld(fx2,fy2,wfx2,wfy2);
 
   double dx = wfx1 - wfx2;
   double dy = wfy1 - wfy2;
-
-  if((dx*dx) + (dy*dy) < (p_same_frontier_dist_*p_same_frontier_dist_)){
-    return true;
-  }
-  return false;
+  if(get_sq_dist)
+    return (dx*dx) + (dy*dy);
+  return std::sqrt((dx*dx) + (dy*dy));
 }
 
 inline unsigned int HectorExplorationPlanner::cellDanger(int point){

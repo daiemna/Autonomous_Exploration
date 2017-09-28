@@ -106,6 +106,7 @@ private:
    */
   void setupMapData();
   void deleteMapData();
+  bool build_frontier_utility_array_(std::vector<geometry_msgs::PoseStamped> goals);
   bool buildobstacle_trans_array_(bool use_inflated_obstacles);
   bool buildexploration_trans_array_(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals,bool useAnglePenalty, bool use_cell_danger = true);
   bool getTrajectory(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals, std::vector<geometry_msgs::PoseStamped> &plan);
@@ -126,6 +127,8 @@ private:
   double getYawToUnknown(int point);
   bool isFrontierReached(int point);
   bool isSameFrontier(int frontier_point1,int frontier_point2);
+  bool is_in_range(int point1, int point2, const int range);
+  double get_distance(int point1, int point2, bool get_sq_dist);
 
   void getStraightPoints(int point, int points[]);
   void getDiagonalPoints(int point, int points[]);
@@ -152,6 +155,7 @@ private:
   const unsigned char* occupancy_grid_array_;
   boost::shared_array<unsigned int> exploration_trans_array_;
   boost::shared_array<unsigned int> obstacle_trans_array_;
+  boost::shared_array<unsigned int> utility_trans_array_;
   boost::shared_array<int> frontier_map_array_;
   boost::shared_array<bool> is_goal_array_;
 
@@ -183,6 +187,7 @@ private:
 
   double p_cos_of_allowed_observation_pose_angle_;
   double p_close_to_path_target_distance_;
+  int p_sensor_range_;
 
   boost::shared_ptr<dynamic_reconfigure::Server<hector_exploration_planner::ExplorationPlannerConfig> > dyn_rec_server_;
 
