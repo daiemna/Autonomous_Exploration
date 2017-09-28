@@ -1,0 +1,14 @@
+.settings
+.cproject
+.pydevproject
+.project
+.svn
+.autotools
+!.gitignore
+bin
+build
+lib
+/Debug
+*.pyc
+msg_gen
+srv_gen

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="workspace_finder_config_file" default="$(find mcr_scene_segmentation)/ros/config/workspace_constraints.yaml" />
+  <arg name="object_constraints_config_file" default="$(find mcr_scene_segmentation)/ros/config/object_constraints.yaml" />
+  <arg name="input_pointcloud_topic" default="/arm_cam3d/depth_registered/points" />
+  <arg name="camera_frame" default="arm_cam3d_rgb_optical_frame" />
+ 
+  <include file="$(find mcr_scene_segmentation)/ros/launch/workspace_finder.launch">
+    <arg name="input_pointcloud_topic" value="$(arg input_pointcloud_topic)" />
+    <arg name="workspace_finder_config_file" value="$(arg workspace_finder_config_file)" />
+  </include>
+
+  <group ns="mcr_perception">
+
+    <rosparam file="$(arg object_constraints_config_file)" command="load"/>
+
+    <node pkg="mcr_scene_segmentation" type="workspace_finder" name="workspace_finder" output="screen">
+      <remap from="~input/polygon" to="/mcr_perception/convex_hull/output_polygon" />
+      <remap from="~input/coefficients" to="/mcr_perception/planar_segmentation/model" />
+      <remap from="~workspace_polygon" to="/visualization_marker" />
+      <param name="message_age_threshold" value="2.0" type="double"/>
+    </node>
+
+    <node pkg="mcr_scene_segmentation" type="tabletop_cloud_accumulator" name="tabletop_cloud_accumulator" output="screen">
+      <param name="camera_frame" value="$(arg camera_frame)" />
+      <remap from="~input_pointcloud" to="/mcr_perception/transform/output" />
+    </node>
+
+    <node pkg="mcr_scene_segmentation" type="tabletop_cloud_clusterer" name="tabletop_cloud_clusterer" output="screen" />
+
+    <node pkg="mcr_scene_segmentation" type="bounding_box_maker" name="bounding_box_maker" output="screen" >
+      <remap from="~bounding_boxes" to="/visualization_marker" />
+    </node>
+  
+  </group>
+
+</launch>

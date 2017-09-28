@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="mcr_twist_limiter" type="simulated_twist_gui_node"
+            name="simulated_twist_gui" output="screen">
+
+        <!-- the cycle rate of the node (in Hz) -->
+        <param name="loop_rate" type="double" value="10"/>
+
+        <remap from="~twist" to="/twist_limiter/twist"/>
+
+    </node>
+</launch>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>youbot_diagnostic_aggregator</name>
+  <version>0.0.1</version>
+  <description>Aggregator for diagnostics msgs</description>
+
+  <maintainer email="frederik.hegger@h-brs.de">Frederik Hegger</maintainer>
+
+  <license>GPLv3</license>
+
+  <author email="frederik.hegger@h-brs.de">Frederik Hegger</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>diagnostic_aggregator</run_depend>
+  
+  <test_depend>roslaunch</test_depend>
+
+</package>
