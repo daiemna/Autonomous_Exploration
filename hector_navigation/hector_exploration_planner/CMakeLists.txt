@@ -16,17 +16,24 @@ find_package(catkin REQUIRED COMPONENTS
   rosconsole
   roscpp
   rospy
+  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen REQUIRED)
+find_package(OpenCV REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 
 generate_dynamic_reconfigure_options(
   cfg/ExplorationPlanner.cfg
 )
+
+message(STATUS "OpenCV library status:")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -95,9 +102,21 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES hector_exploration_base_global_planner_plugin ${PROJECT_NAME}
-  CATKIN_DEPENDS costmap_2d dynamic_reconfigure geometry_msgs hector_nav_msgs nav_core nav_msgs pluginlib rosconsole roscpp rospy
-#  DEPENDS system_lib
+  LIBRARIES
+    hector_exploration_base_global_planner_plugin
+    ${PROJECT_NAME}
+  CATKIN_DEPENDS
+    costmap_2d
+    dynamic_reconfigure
+    geometry_msgs
+    hector_nav_msgs
+    nav_core nav_msgs
+    pluginlib
+    rosconsole
+    roscpp
+    rospy
+    cv_bridge
+  DEPENDS OpenCV
 )
 
 ###########
@@ -110,6 +129,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -129,10 +149,10 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 add_dependencies(hector_exploration_base_global_planner_plugin ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(hector_exploration_planner_node
-#   ${catkin_LIBRARIES}
-# )
-
+target_link_libraries(${PROJECT_NAME}
+  # ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 target_link_libraries(hector_exploration_base_global_planner_plugin ${PROJECT_NAME})
 
 #############

@@ -34,6 +34,8 @@
 #include <Eigen/Geometry>
 
 #include <hector_exploration_planner/ExplorationPlannerConfig.h>
+#include <opencv2/opencv.hpp>
+#include <limits>
 
 #define STRAIGHT_COST 100
 #define DIAGONAL_COST 141
@@ -86,6 +88,8 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
   goal_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("goal_pose", 1, true);
   frontier_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("frontiers", 1, true);
 
+  cluster_pub_ = private_nh_.advertise<sensor_msgs::Image>("cluster_image", 1, true);
+  cluster_image_counter = 0;
   dyn_rec_server_.reset(new dynamic_reconfigure::Server<hector_exploration_planner::ExplorationPlannerConfig>(ros::NodeHandle("~/hector_exploration_planner")));
 
   dyn_rec_server_->setCallback(boost::bind(&HectorExplorationPlanner::dynRecParamCallback, this, _1, _2));
@@ -122,6 +126,7 @@ void HectorExplorationPlanner::dynRecParamCallback(hector_exploration_planner::E
   double angle_rad = config.observation_pose_allowed_angle * (M_PI / 180.0);
   p_cos_of_allowed_observation_pose_angle_ = cos(angle_rad);
   p_close_to_path_target_distance_ = config.close_to_path_target_distance;
+  p_cluster_count_ = config.cluster_count;
 }
 
 bool HectorExplorationPlanner::makePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &original_goal, std::vector<geometry_msgs::PoseStamped> &plan){
@@ -247,6 +252,7 @@ bool HectorExplorationPlanner::doExploration(const geometry_msgs::PoseStamped &s
   if(!buildexploration_trans_array_(start,goals,true)){
     return false;
   }
+  // TODO : assigne utility value to each frontier.
   // starting from current pose find the path to least costly frontier
   if(!getTrajectory(start,goals,plan)){
     ROS_INFO("[hector_exploration_planner] exploration: could not plan to frontier, starting inner-exploration");
@@ -356,7 +362,7 @@ bool HectorExplorationPlanner::doInnerExploration(const geometry_msgs::PoseStamp
   return true;
 }
 
-bool HectorExplorationPlanner::getObservationPose(const geometry_msgs::PoseStamped& observation_pose, const double desired_distance, geometry_msgs::PoseStamped& new_observation_pose{
+bool HectorExplorationPlanner::getObservationPose(const geometry_msgs::PoseStamped& observation_pose, const double desired_distance, geometry_msgs::PoseStamped& new_observation_pose){
   // We call this from inside the planner, so map data setup and reset already happened
   //this->setupMapData();
   //resetMaps();
@@ -966,6 +972,7 @@ bool HectorExplorationPlanner::buildobstacle_trans_array_(bool use_inflated_obst
   std::queue<int> myqueue;
 
   // init obstacles
+  // assiging minimum value to obstacles
   for(unsigned int i=0; i < num_map_cells_; ++i){
     if(occupancy_grid_array_[i] == costmap_2d::LETHAL_OBSTACLE){
       myqueue.push(i);
@@ -1214,41 +1221,6 @@ bool HectorExplorationPlanner::findFrontiersCloseToPath(std::vector<geometry_msg
     }
   }
 
-  /*
-  // list of all frontiers in the occupancy grid
-  std::vector<int> allFrontiers;
-
-  // check for all cells in the occupancy grid whether or not they are frontier cells
-  for(unsigned int i = 0; i < num_map_cells_; ++i){
-    if(isFrontier(i)){
-      allFrontiers.push_back(i);
-    }
-  }
-
-  for(unsigned int i = 0; i < allFrontiers.size(); ++i){
-    if(!isFrontierReached(allFrontiers[i])){
-      geometry_msgs::PoseStamped finalFrontier;
-      double wx,wy;
-      unsigned int mx,my;
-      costmap_->indexToCells(allFrontiers[i], mx, my);
-      costmap_->mapToWorld(mx,my,wx,wy);
-      std::string global_frame = costmap_ros_->getGlobalFrameID();
-      finalFrontier.header.frame_id = global_frame;
-      finalFrontier.pose.position.x = wx;
-      finalFrontier.pose.position.y = wy;
-      finalFrontier.pose.position.z = 0.0;
-
-      double yaw = getYawToUnknown(costmap_->getIndex(mx,my));
-
-      //if(frontier_is_valid){
-
-      finalFrontier.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-
-      frontiers.push_back(finalFrontier);
-    }
-    //}
-  }*/
-
   return (frontiers.size() > 0);
 }
 
@@ -1272,30 +1244,79 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
   // check for all cells in the occupancy grid whether or not they are frontier cells
   for(unsigned int i = 0; i < num_map_cells_; ++i){
     if(isFrontier(i)){
-      allFrontiers.push_back(i);
+      if(p_cluster_count_ > 0){
+        if(!isFrontierReached(i)){
+          // ROS_DEBUG("Adding to allFrontiers!");
+          allFrontiers.push_back(i);
+        }
+      }else{
+          allFrontiers.push_back(i);
+      }
     }
   }
-  for(unsigned int i = 0; i < allFrontiers.size(); ++i){
-    if(!isFrontierReached(allFrontiers[i])){
-      geometry_msgs::PoseStamped finalFrontier;
-      // geometry_msgs::Pose front;
 
+  if(p_cluster_count_ > 0){
+    // Add Clustring here.
+    cv::Mat points(allFrontiers.size(), 1, CV_32FC2), labels, centers;
+    int clusterCount = p_cluster_count_;
+    for(int i = 0; i < allFrontiers.size(); ++i){
+      // if(!isFrontierReached(allFrontiers[i])){
       double wx,wy;
       unsigned int mx,my;
       costmap_->indexToCells(allFrontiers[i], mx, my);
       costmap_->mapToWorld(mx,my,wx,wy);
-      std::string global_frame = costmap_ros_->getGlobalFrameID();
-      finalFrontier.header.frame_id = global_frame;
-      finalFrontier.pose.position.x = wx;
-      finalFrontier.pose.position.y = wy;
-      finalFrontier.pose.position.z = 0.0;
+      //TODO: possible presicion loss because points is CV_32F
+      points.row(i) = cv::Scalar(wx, wy);
+      // }
+    }
+    cv::kmeans(points,
+               clusterCount,
+               labels,
+               cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
+                                clusterCount * 10, 0.00001),
+               3, cv::KMEANS_PP_CENTERS, centers);
+    ROS_DEBUG_STREAM("Cluster centers : " << centers);
+    ROS_DEBUG_STREAM("labels count : " << labels.total() );
+    ROS_DEBUG_STREAM("points count : " << points.rows );
 
-      double yaw = getYawToUnknown(costmap_->getIndex(mx,my));
 
-      //if(frontier_is_valid){
+    char key;
+    // std::cin >> key;
 
-      finalFrontier.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+    for (unsigned int i=0; i < centers.rows; ++i){
 
+      geometry_msgs::PoseStamped finalFrontier;
+      getPoseFromWorld((double)centers.row(i).at<float>(0), (double)centers.row(i).at<float>(1), finalFrontier);
+      ROS_DEBUG("done calling getPoseFromWorld()");
+      frontiers.push_back(finalFrontier);
+      ROS_DEBUG("done calling frontiers.push_back(finalFrontier)");
+      if(publishing_frontiers){
+        fronts.push_back(finalFrontier.pose);
+        ROS_DEBUG("done calling fronts.push_back(finalFrontier.pose)");
+      }
+
+
+    }
+    ROS_DEBUG_STREAM("Cluster centers : \n" << centers);
+    if(publishing_frontiers){
+      geometry_msgs::PoseArray frontiers_msg;
+      frontiers_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+      frontiers_msg.poses = fronts;
+      frontier_pub_.publish(frontiers_msg);
+      ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
+    }
+    // std::cin >> key;
+    // if( key == 27 || key == 'q' || key == 'Q' ) // 'ESC'
+    //     return false;
+    transmitClusterImage(points, labels, centers);
+    return (frontiers.size() > 0);
+  }
+
+
+  for(unsigned int i = 0; i < allFrontiers.size(); ++i){
+    if(!isFrontierReached(allFrontiers[i])){
+      geometry_msgs::PoseStamped finalFrontier;
+      getPoseFromIndex(allFrontiers[i], finalFrontier);
       frontiers.push_back(finalFrontier);
 
       if(publishing_frontiers){
@@ -1315,150 +1336,98 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
     ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
   }
   return (frontiers.size() > 0);
+}
 
-  //TODO: Review and possibly remove unused code below
-/*
-  // value of the next blob
-  int nextBlobValue = 1;
-  std::list<int> usedBlobs;
+bool HectorExplorationPlanner::transmitClusterImage(cv::Mat points, cv::Mat labels, cv::Mat centers){
+  if(cluster_pub_.getNumSubscribers() <= 0){
+    ROS_DEBUG("NOT PUBLISHING CLUSTER IMAGE!");
+    return false;
+  }
+  cv::RNG rng( 0xFFFFFFFF );
+  unsigned int image_size = 500;
+  const int centers_count  =centers.rows;
+  double wx, wy;
+  unsigned int mx, my;
+  float map_x, map_y;
+  cv::Mat img(map_width_, map_height_, CV_8UC3);
+  img = cv::Scalar::all(255);
+  cv::Scalar colorTab[centers_count];
 
-  for(unsigned int i = 0; i < allFrontiers.size(); ++i){
+  for(unsigned int i=0; i < centers_count; ++i){
+    int icolor = (unsigned) rng;
+    colorTab[i] = cv::Scalar( icolor&255, (icolor>>8)&255, (icolor>>16)&255 );
+    wx = (double)centers.row(i).at<float>(0);
+    wy = (double)centers.row(i).at<float>(1);
+    costmap_->worldToMap(wx, wy, mx, my);
+    map_x = (float) mx;
+    map_y = (float) my;
+    cv::Point2f ipt(map_x, map_y);
+    cv::circle( img, ipt, 2, cv::Scalar(0, 0, 0), -1, CV_AA);
+  }
+  for(unsigned int i=0; i < points.rows; ++i){
+    int clusterIdx = labels.at<int>(i);
 
-    // get all adjacent blobs to the current frontier point
-    int currentPoint = allFrontiers[i];
-    int adjacentPoints[8];
-    getAdjacentPoints(currentPoint,adjacentPoints);
-
-    std::list<int> blobs;
-
-    for(int j = 0; j < 8; j++){
-      if(isValid(adjacentPoints[j]) && (frontier_map_array_[adjacentPoints[j]] > 0)){
-        blobs.push_back(frontier_map_array_[adjacentPoints[j]]);
-      }
-    }
-    blobs.unique();
-
-    if(blobs.empty()){
-      // create new blob
-      frontier_map_array_[currentPoint] = nextBlobValue;
-      usedBlobs.push_back(nextBlobValue);
-      nextBlobValue++;
-    } else {
-      // merge all found blobs
-      int blobMergeVal = 0;
-
-      for(std::list<int>::iterator adjBlob = blobs.begin(); adjBlob != blobs.end(); ++adjBlob){
-        if(adjBlob == blobs.begin()){
-          blobMergeVal = *adjBlob;
-          frontier_map_array_[currentPoint] = blobMergeVal;
-        } else {
-
-          for(unsigned int k = 0; k < allFrontiers.size(); k++){
-            if(frontier_map_array_[allFrontiers[k]] == *adjBlob){
-              usedBlobs.remove(*adjBlob);
-              frontier_map_array_[allFrontiers[k]] = blobMergeVal;
-            }
-          }
-        }
-      }
-    }
+    wx = (double)points.row(i).at<float>(0);
+    wy = (double)points.row(i).at<float>(1);
+    costmap_->worldToMap(wx, wy, mx, my);
+    map_x = (float) mx;
+    map_y = (float) my;
+    cv::Point2f ipt(map_x, map_y);
+    cv::circle( img, ipt, 2, colorTab[clusterIdx], -1, CV_AA);
   }
 
-  int id = 1;
+  cv_bridge::CvImage img_bridge;
+  sensor_msgs::Image img_msg;
 
-  bool visualization_requested = (visualization_pub_.getNumSubscribers() > 0);
-  // bool visualization_requested = true;
-  // summarize every blob into a single point (maximum obstacle_trans_array_ value)
-  for(std::list<int>::iterator currentBlob = usedBlobs.begin(); currentBlob != usedBlobs.end(); ++currentBlob){
-    int current_frontier_size = 0;
-    int max_obs_idx = 0;
+  std_msgs::Header header; // empty header
+  header.seq = cluster_image_counter; // user defined counter
 
-    for(unsigned int i = 0; i < allFrontiers.size(); ++i){
-      int point = allFrontiers[i];
+  header.stamp = ros::Time::now(); // time
+  img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, img);
+  img_bridge.toImageMsg(img_msg); // from cv_bridge to sensor_msgs::Image
+  cluster_pub_.publish(img_msg);
+  ROS_DEBUG_STREAM("Published image of clusters : " << map_width_ << "x" << map_height_);
+  cluster_image_counter += 1;
+  return true;
+}
 
-      if(frontier_map_array_[point] == *currentBlob){
-        current_frontier_size++;
-        if(obstacle_trans_array_[point] > obstacle_trans_array_[allFrontiers[max_obs_idx]]){
-          max_obs_idx = i;
-        }
-      }
-    }
+void HectorExplorationPlanner::getPoseFromIndex(int index, geometry_msgs::PoseStamped &pose){
+  double wx,wy;
+  unsigned int mx,my;
+  costmap_->indexToCells(index, mx, my);
+  costmap_->mapToWorld(mx,my,wx,wy);
+  std::string global_frame = costmap_ros_->getGlobalFrameID();
+  pose.header.frame_id = global_frame;
+  pose.pose.position.x = wx;
+  pose.pose.position.y = wy;
+  pose.pose.position.z = 0.0;
 
-    if(current_frontier_size < p_min_frontier_size_){
-      continue;
-    }
+  double yaw = getYawToUnknown(costmap_->getIndex(mx,my));
 
-    int frontier_point = allFrontiers[max_obs_idx];
-    unsigned int x,y;
-    costmap_->indexToCells(frontier_point,x,y);
+  //if(frontier_is_valid){
 
-    // check if frontier is valid (not to close to robot and not in noFrontiers vector
-    bool frontier_is_valid = true;
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+}
 
-    if(isFrontierReached(frontier_point)){
-      frontier_is_valid = false;
-    }
+void HectorExplorationPlanner::getPoseFromWorld(double wx, double wy, geometry_msgs::PoseStamped &pose){
+  ROS_DEBUG("Called getPoseFromWorld()");
+  unsigned int mx,my;
 
-    for(size_t i = 0; i < noFrontiers.size(); ++i){
-      const geometry_msgs::PoseStamped& noFrontier = noFrontiers[i];
-      unsigned int mx,my;
-      costmap_->worldToMap(noFrontier.pose.position.x,noFrontier.pose.position.y,mx,my);
-      int no_frontier_point = costmap_->getIndex(x,y);
-      if(isSameFrontier(frontier_point,no_frontier_point)){
-        frontier_is_valid = false;
-      }
-    }
-
-    geometry_msgs::PoseStamped finalFrontier;
-    double wx,wy;
-    costmap_->mapToWorld(x,y,wx,wy);
-    std::string global_frame = costmap_ros_->getGlobalFrameID();
-    finalFrontier.header.frame_id = global_frame;
-    finalFrontier.pose.position.x = wx;
-    finalFrontier.pose.position.y = wy;
-    finalFrontier.pose.position.z = 0.0;
-
-    double yaw = getYawToUnknown(costmap_->getIndex(x,y));
-
-    if(frontier_is_valid){
-
-      finalFrontier.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-      frontiers.push_back(finalFrontier);
-    }
-
-    // visualization (export to method?)
-    if(visualization_requested){
-      visualization_msgs::Marker marker;
-      marker.header.frame_id = "map";
-      marker.header.stamp = ros::Time();
-      marker.ns = "hector_exploration_planner";
-      marker.id = id++;
-      marker.type = visualization_msgs::Marker::ARROW;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.pose.position.x = wx;
-      marker.pose.position.y = wy;
-      marker.pose.position.z = 0.0;
-      marker.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-      marker.scale.x = 0.2;
-      marker.scale.y = 0.2;
-      marker.scale.z = 0.2;
-      marker.color.a = 1.0;
-
-      if(frontier_is_valid){
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-      }else{
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-      }
-
-      marker.color.b = 0.0;
-      marker.lifetime = ros::Duration(5,0);
-      visualization_pub_.publish(marker);
-    }
-
-  }
-  return !frontiers.empty();*/
+  std::string global_frame = costmap_ros_->getGlobalFrameID();
+  pose.header.frame_id = global_frame;
+  pose.pose.position.x = wx;
+  pose.pose.position.y = wy;
+  pose.pose.position.z = 0.0;
+  ROS_DEBUG("Initializing Pose");
+  ROS_DEBUG_STREAM("Converting world : (" << wx << ", " << wy << ")" );
+  costmap_->worldToMap(wx, wy, mx, my);
+  ROS_DEBUG_STREAM("to map : (" << mx << ", " << my << ")" );
+  unsigned int the_ind =  costmap_->getIndex(mx,my);
+  ROS_DEBUG_STREAM("converted to index : " << the_ind );
+  double yaw = getYawToUnknown(the_ind);
+  ROS_DEBUG_STREAM("got Yaw : " << yaw);
+  pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+  ROS_DEBUG("done getting yaw.");
 }
 
 bool HectorExplorationPlanner::findInnerFrontier(std::vector<geometry_msgs::PoseStamped> &innerFrontier){
@@ -1963,8 +1932,8 @@ inline int HectorExplorationPlanner::downleft(int point){
 //        marker.text = boost::lexical_cast<std::string>((int)init_cost) + " - " + boost::lexical_cast<std::string>(getDistanceWeight(start,goals[i]));
 //        visualization_pub_.publish(marker);
 
-//void HectorExplorationPlanner::saveMaps(std::string path){
-
+// void HectorExplorationPlanner::saveMaps(std::string path){
+//
 //    char costmapPath[1000];
 //    sprintf(costmapPath,"%s.map",path.data());
 //    char explorationPath[1000];
@@ -1973,19 +1942,18 @@ inline int HectorExplorationPlanner::downleft(int point){
 //    sprintf(obstaclePath,"%s.obs",path.data());
 //    char frontierPath[1000];
 //    sprintf(frontierPath,"%s.front",path.data());
-
-
+//
 //    costmap.saveMap(costmapPath);
 //    FILE *fp_expl = fopen(explorationPath,"w");
 //    FILE *fp_obs = fopen(obstaclePath,"w");
 //    FILE *fp_front = fopen(frontierPath,"w");
-
+//
 //    if (!fp_expl || !fp_obs || !fp_front)
 //    {
 //        ROS_WARN("[hector_exploration_planner] Cannot save maps");
 //        return;
 //    }
-
+//
 //    for(unsigned int y = 0; y < map_height_; ++y){
 //        for(unsigned int x = 0;x < map_width_; ++x){
 //            unsigned int expl = exploration_trans_array_[costmap.getIndex(x,y)];
@@ -1999,23 +1967,11 @@ inline int HectorExplorationPlanner::downleft(int point){
 //        fprintf(fp_obs,"\n");
 //        fprintf(fp_front,"\n");
 //    }
-
+//
 //    fclose(fp_expl);
 //    fclose(fp_obs);
 //    fclose(fp_front);
 //    ROS_INFO("[hector_exploration_planner] Maps have been saved!");
 //    return;
-
-//}
-
-//    // add last point to path (goal point)
-//    for(unsigned int i = 0; i < goals.size(); ++i){
-//        unsigned int mx,my;
-//        costmap.worldToMap(goals[i].pose.position.x,goals[i].pose.position.y,mx,my);
-
-//        if(currentPoint == (int)costmap.getIndex(mx,my)){
-//            plan.push_back(goals[i]);
-//            previous_goal_ = currentPoint;
-//        }
-
-//    }
+//
+// }

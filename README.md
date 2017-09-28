@@ -18,3 +18,8 @@ This is the repository for Research and Development Project "Autonomous Explorat
 - to do exploration near previous trajectory.
   - add each pose of trajectory as frontier and the call buildexploration_trans_array_ to assign cost.
   - this will cause cost to increase outwards from trajectory.
+
+## TODO(s):
+- robot voilated the obstacle wile path following boundaries change that.
+  - possible solution is to check unified range sensor data for proximity and abandon the plan.
+  -

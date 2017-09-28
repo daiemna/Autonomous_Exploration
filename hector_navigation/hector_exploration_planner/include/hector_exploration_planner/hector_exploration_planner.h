@@ -34,6 +34,9 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <dynamic_reconfigure/server.h>
 
@@ -85,9 +88,11 @@ public:
   bool findFrontiersCloseToPath(std::vector<geometry_msgs::PoseStamped> &frontiers);
   bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers);
   bool findInnerFrontier(std::vector<geometry_msgs::PoseStamped> &innerFrontier);
-
   float angleDifferenceWall(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal);
   bool exploreWalls(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> &goals);
+
+  void getPoseFromIndex(int index, geometry_msgs::PoseStamped &pose);
+  void getPoseFromWorld(double wx, double wy, geometry_msgs::PoseStamped &pose);
 
 private:
 
@@ -107,6 +112,7 @@ private:
   bool recoveryMakePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal,std::vector<geometry_msgs::PoseStamped> &plan);
   unsigned int cellDanger(int point);
   unsigned int angleDanger(float angle);
+  bool transmitClusterImage(cv::Mat points, cv::Mat labels, cv::Mat centers);
 
   void saveMaps(std::string path);
   void resetMaps();
@@ -135,9 +141,10 @@ private:
 
   ros::Publisher observation_pose_pub_;
   ros::Publisher goal_pose_pub_;
-
   ros::Publisher visualization_pub_;
   ros::Publisher frontier_pub_;
+  ros::Publisher cluster_pub_;
+
   ros::ServiceClient path_service_client_;
   costmap_2d::Costmap2DROS* costmap_ros_;
   costmap_2d::Costmap2D* costmap_;
@@ -152,11 +159,15 @@ private:
   int previous_goal_;
 
   std::string name;
+  unsigned cluster_image_counter;
   unsigned int map_width_;
   unsigned int map_height_;
   unsigned int num_map_cells_;
+  unsigned int cluster_count_;
+
 
   // Parameters
+  int p_cluster_count_;
   bool p_plan_in_unknown_;
   bool p_explore_close_to_path_;
   bool p_use_inflated_obs_;
