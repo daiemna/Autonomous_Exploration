@@ -52,8 +52,8 @@ namespace pose_follower {
 
     node_private.param("samples", samples_, 10);
 
-    node_private.param("max_vel_lin", max_vel_lin_, 0.3);
-    node_private.param("max_vel_th", max_vel_th_, 1.4);
+    node_private.param("max_vel_lin", max_vel_lin_, 1.0);
+    node_private.param("max_vel_th", max_vel_th_, 0.5);
 
     node_private.param("min_vel_lin", min_vel_lin_, 0.1);
     node_private.param("min_vel_th", min_vel_th_, 0.0);
