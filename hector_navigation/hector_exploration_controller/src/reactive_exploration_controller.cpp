@@ -52,9 +52,8 @@ public:
   void timerPlanExploration(const ros::TimerEvent& e)
   {
     hector_nav_msgs::GetRobotTrajectory srv_exploration_plan;
-    if(path_follower_.isGoalReached()){
+    if(path_follower_.isGoalReached() || path_follower_.isObstacleInRange()){
       geometry_msgs::Twist twist;
-      path_follower_.computeVelocityCommands(twist);
       // stop the robot.
       twist.linear.x = 0.0;
       twist.linear.y = 0.0;

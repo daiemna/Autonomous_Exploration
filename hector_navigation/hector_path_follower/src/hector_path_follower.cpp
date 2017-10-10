@@ -68,6 +68,7 @@ namespace pose_follower {
 
     //ros::NodeHandle node;
     //vel_pub_ = node.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+    wall_follower_.initialize();
     goal_reached_ = true;
     ROS_DEBUG("Initialized");
   }
@@ -229,7 +230,9 @@ namespace pose_follower {
     */
     return goal_reached_;
   }
-
+  bool HectorPathFollower::isObstacleInRange(){
+    return wall_follower_.is_obstacle_in_range();
+  }
   geometry_msgs::Twist HectorPathFollower::diff2D(const tf::Pose& pose1, const tf::Pose& pose2)
   {
     geometry_msgs::Twist res;
