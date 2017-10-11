@@ -45,7 +45,7 @@ public:
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(1.0), &ReactiveExplorationController::timerPlanExploration, this, false );
     cmd_vel_generator_timer_ = nh.createTimer(ros::Duration(0.1), &ReactiveExplorationController::timerCmdVelGeneration, this, false );
 
-    vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+    vel_pub_ = nh.advertise<geometry_msgs::Twist>("/cmd_vel_prio_medium", 10);
 
   }
 
