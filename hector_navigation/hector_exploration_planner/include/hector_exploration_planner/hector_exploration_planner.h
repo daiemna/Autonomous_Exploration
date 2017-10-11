@@ -106,13 +106,15 @@ private:
    */
   void setupMapData();
   void deleteMapData();
+  bool build_frontier_utility_array_(std::vector<geometry_msgs::PoseStamped> goals);
   bool buildobstacle_trans_array_(bool use_inflated_obstacles);
   bool buildexploration_trans_array_(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals,bool useAnglePenalty, bool use_cell_danger = true);
-  bool getTrajectory(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals, std::vector<geometry_msgs::PoseStamped> &plan);
+  bool getTrajectory(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> goals, std::vector<geometry_msgs::PoseStamped> &plan, bool by_cost_utility);
   bool recoveryMakePlan(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal,std::vector<geometry_msgs::PoseStamped> &plan);
   unsigned int cellDanger(int point);
   unsigned int angleDanger(float angle);
   bool transmitClusterImage(cv::Mat points, cv::Mat labels, cv::Mat centers);
+  bool transmitExplorationArray();
 
   void saveMaps(std::string path);
   void resetMaps();
@@ -126,6 +128,9 @@ private:
   double getYawToUnknown(int point);
   bool isFrontierReached(int point);
   bool isSameFrontier(int frontier_point1,int frontier_point2);
+  bool is_in_range(int point1, int point2, const int range);
+  double get_distance(int point1, int point2, bool get_sq_dist);
+  double get_cell_distance(int point1, int point2, bool get_sq_dist);
 
   void getStraightPoints(int point, int points[]);
   void getDiagonalPoints(int point, int points[]);
@@ -141,9 +146,10 @@ private:
 
   ros::Publisher observation_pose_pub_;
   ros::Publisher goal_pose_pub_;
-  ros::Publisher visualization_pub_;
+  // ros::Publisher visualization_pub_;
   ros::Publisher frontier_pub_;
   ros::Publisher cluster_pub_;
+  ros::Publisher exploration_trans_pub_;
 
   ros::ServiceClient path_service_client_;
   costmap_2d::Costmap2DROS* costmap_ros_;
@@ -152,6 +158,8 @@ private:
   const unsigned char* occupancy_grid_array_;
   boost::shared_array<unsigned int> exploration_trans_array_;
   boost::shared_array<unsigned int> obstacle_trans_array_;
+  boost::shared_array<float> utility_trans_array_;
+  // boost::shared_array<float> benifit_trans_array_;
   boost::shared_array<int> frontier_map_array_;
   boost::shared_array<bool> is_goal_array_;
 
@@ -159,7 +167,8 @@ private:
   int previous_goal_;
 
   std::string name;
-  unsigned cluster_image_counter;
+  unsigned int cluster_image_counter;
+  unsigned int exp_trans_image_counter;
   unsigned int map_width_;
   unsigned int map_height_;
   unsigned int num_map_cells_;
@@ -170,6 +179,7 @@ private:
   int p_cluster_count_;
   bool p_plan_in_unknown_;
   bool p_explore_close_to_path_;
+  bool p_benifit_exploration;
   bool p_use_inflated_obs_;
   int p_goal_angle_penalty_;
   int p_min_obstacle_dist_;
@@ -183,6 +193,7 @@ private:
 
   double p_cos_of_allowed_observation_pose_angle_;
   double p_close_to_path_target_distance_;
+  int p_sensor_range_;
 
   boost::shared_ptr<dynamic_reconfigure::Server<hector_exploration_planner::ExplorationPlannerConfig> > dyn_rec_server_;
 

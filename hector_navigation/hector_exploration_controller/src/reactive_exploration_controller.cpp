@@ -52,7 +52,13 @@ public:
   void timerPlanExploration(const ros::TimerEvent& e)
   {
     hector_nav_msgs::GetRobotTrajectory srv_exploration_plan;
-    if(path_follower_.isGoalReached()){
+    if(path_follower_.isGoalReached() || path_follower_.isObstacleInRange()){
+      geometry_msgs::Twist twist;
+      // stop the robot.
+      twist.linear.x = 0.0;
+      twist.linear.y = 0.0;
+      twist.angular.z = 0.0;
+      vel_pub_.publish(twist);
       if (exploration_plan_service_client_.call(srv_exploration_plan)){
         ROS_INFO("Generated exploration path with %u poses", (unsigned int)srv_exploration_plan.response.trajectory.poses.size());
         path_follower_.setPlan(srv_exploration_plan.response.trajectory.poses);
