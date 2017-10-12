@@ -37,6 +37,7 @@
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <hector_wall_follower/hector_wall_follower.h>
 
 namespace pose_follower {
   class HectorPathFollower
@@ -45,6 +46,7 @@ namespace pose_follower {
       HectorPathFollower();
       void initialize(tf::TransformListener* tf);
       bool isGoalReached();
+      bool isObstacleInRange();
       bool setPlan(const std::vector<geometry_msgs::PoseStamped>& global_plan);
       bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
 
@@ -66,6 +68,7 @@ namespace pose_follower {
       bool getRobotPose(tf::Stamped<tf::Pose>& global_pose) const;
 
       tf::TransformListener* tf_;
+      pose_follower::WallFollower wall_follower_;
 
       double K_trans_, K_rot_, tolerance_trans_, tolerance_rot_;
       double tolerance_timeout_;
