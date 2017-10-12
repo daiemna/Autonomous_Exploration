@@ -1255,7 +1255,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
     }
   }
 
-  if(p_cluster_count_ > 0){
+  if(p_cluster_count_ > 0 && p_cluster_count_ < allFrontiers.size()){
     // Add Clustring here.
     cv::Mat points(allFrontiers.size(), 1, CV_32FC2), labels, centers;
     int clusterCount = p_cluster_count_;
