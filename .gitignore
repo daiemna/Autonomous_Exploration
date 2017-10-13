@@ -6,3 +6,6 @@
 /setup.zsh
 /CMakeLists.txt
 /.tags
+
+# docker files
+clear_docker.sh
