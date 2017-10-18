@@ -84,8 +84,8 @@ public:
           unsigned int arr_size = (unsigned int)srv_exploration_plan.response.trajectory.poses.size();
           ROS_INFO("Generated exploration path with %u poses", arr_size);
           if(arr_size <= 0){
-            ROS_INFO("-----------------------------------SUHTING DOWN NODE -------------------");
-            ros::shutdown();
+            // ROS_INFO("-----------------------------------SUHTING DOWN NODE -------------------");
+            // ros::shutdown();
             first_time_ = true;
             return;
           }
