@@ -51,6 +51,7 @@ public:
     first_time_ = true;
     goal_id_ = 0;
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(1.0), &ReactiveExplorationController::timerPlanExploration, this, false );
+
     exploration_plan_service_client_ = nh.serviceClient<hector_nav_msgs::GetRobotTrajectory>("get_exploration_path");
     first_aborted_goal_id = -1;
     // path_follower_.initialize(&tfl_);
@@ -101,6 +102,7 @@ public:
         }else{
           ROS_WARN("Service call for exploration service failed");
         }
+
     }else{
       ROS_DEBUG("Still Executing Plan!");
     }

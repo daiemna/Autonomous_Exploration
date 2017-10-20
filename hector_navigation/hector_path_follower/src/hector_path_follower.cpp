@@ -52,8 +52,8 @@ namespace pose_follower {
 
     node_private.param("samples", samples_, 10);
 
-    node_private.param("max_vel_lin", max_vel_lin_, 0.3);
-    node_private.param("max_vel_th", max_vel_th_, 1.4);
+    node_private.param("max_vel_lin", max_vel_lin_, 0.15);
+    node_private.param("max_vel_th", max_vel_th_, 0.3);
 
     node_private.param("min_vel_lin", min_vel_lin_, 0.1);
     node_private.param("min_vel_th", min_vel_th_, 0.0);
@@ -68,6 +68,7 @@ namespace pose_follower {
 
     //ros::NodeHandle node;
     //vel_pub_ = node.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+    wall_follower_.initialize();
     goal_reached_ = true;
     ROS_DEBUG("Initialized");
   }
@@ -229,7 +230,9 @@ namespace pose_follower {
     */
     return goal_reached_;
   }
-
+  bool HectorPathFollower::isObstacleInRange(){
+    return wall_follower_.is_obstacle_in_range();
+  }
   geometry_msgs::Twist HectorPathFollower::diff2D(const tf::Pose& pose1, const tf::Pose& pose2)
   {
     geometry_msgs::Twist res;
