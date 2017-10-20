@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+  </node>
+
+  <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
+  </node>
+</launch>
