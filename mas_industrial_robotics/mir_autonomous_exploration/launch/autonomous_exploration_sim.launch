@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find mir_bringup_sim)/robot.launch"/>
+  <include file="$(find mir_2dslam)/ros/launch/2dslam.launch"/>
+  <include file="$(find hector_exploration_node)/launch/exploration_planner.launch"/>
+  <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/>
+  <include file="$(find mir_autonomous_exploration)/launch/exploration_evaluator.launch"/>
+</launch>
