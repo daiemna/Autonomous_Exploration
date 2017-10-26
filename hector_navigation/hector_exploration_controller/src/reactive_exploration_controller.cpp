@@ -29,8 +29,6 @@
 
 #include <ros/ros.h>
 #include <hector_nav_msgs/GetRobotTrajectory.h>
-
-#include <ros/ros.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseResult.h>
 #include <actionlib/client/simple_action_client.h>
@@ -41,13 +39,13 @@ class ReactiveExplorationController
 {
 public:
   ReactiveExplorationController():
-  move_base_client_("move_base",false)
+  move_base_client_("move_base",true)
   {
     ros::NodeHandle nh;
-
-    // while(!move_base_client_.waitForServer(ros::Duration(5.0))){
-    //   ROS_INFO("Waiting for the move_base action server to come up");
-    // }
+    // move_base_client_ = nh.serviceClient<nav_msgs::GetPlan>()
+    while(!move_base_client_.waitForServer(ros::Duration(1.0))){
+      ROS_INFO("Waiting for the move_base action server to come up");
+    }
     first_time_ = true;
     goal_id_ = 0;
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(1.0), &ReactiveExplorationController::timerPlanExploration, this, false );
@@ -76,7 +74,7 @@ public:
                  (goal_id_ - first_aborted_goal_id > 10)){
                    first_aborted_goal_id = -1;
                    ROS_INFO("-----------------------------------SUHTING DOWN NODE -------------------");
-                   ros::shutdown();
+                  //  ros::shutdown();
         }else if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
           first_aborted_goal_id = -1;
         }
@@ -84,7 +82,7 @@ public:
           unsigned int arr_size = (unsigned int)srv_exploration_plan.response.trajectory.poses.size();
           ROS_INFO("Generated exploration path with %u poses", arr_size);
           if(arr_size <= 0){
-            // ROS_INFO("-----------------------------------SUHTING DOWN NODE -------------------");
+            ROS_INFO("-----------------------------------SUHTING DOWN NODE -------------------");
             // ros::shutdown();
             first_time_ = true;
             return;
