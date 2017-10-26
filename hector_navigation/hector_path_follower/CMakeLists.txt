@@ -81,8 +81,13 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS nav_msgs roscpp tf
+  LIBRARIES
+    ${PROJECT_NAME}
+    hector_wall_follower
+  CATKIN_DEPENDS
+    nav_msgs
+    roscpp
+    tf
 #  DEPENDS system_lib
 )
 
@@ -102,11 +107,15 @@ include_directories(
 # add_library(hector_path_follower
 #   src/${PROJECT_NAME}/hector_path_follower.cpp
 # )
-add_library(${PROJECT_NAME} src/hector_path_follower.cpp)
-
+add_library(hector_wall_follower src/hector_wall_follower.cpp)
+add_library(${PROJECT_NAME}
+            src/hector_path_follower.cpp)
 ## Declare a cpp executable
 # add_executable(hector_path_follower_node src/hector_path_follower_node.cpp)
-add_executable(hector_path_follower_node src/hector_path_follower_node.cpp src/hector_path_follower.cpp)
+add_executable(hector_path_follower_node
+               src/hector_path_follower_node.cpp
+               src/hector_path_follower.cpp
+               src/hector_wall_follower.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
