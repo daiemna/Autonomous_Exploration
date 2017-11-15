@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
-import types
+# import types
 import rospy
 from rospy import logdebug, loginfo
 from utility.costmap import GlobalCostmap
 from geometry_msgs.msg import Pose
 import numpy as np
 import tf
-import json
+# import json
 import datetime as dt
 import os, os.path
+# import subprocess
 
 class ExplorationEvaluator:
     def save_data_to_csv(self, event):
@@ -19,7 +20,12 @@ class ExplorationEvaluator:
         with open(self.csv_save_path, 'a') as myf:
             myf.write("%s;%f;%f\n"%(date, distance, area))
             logdebug("wrote : %s;%f;%f",date, distance, area)
-
+        loginfo(os.system("/bin/bash -c 'rosrun map_server map_saver -f map_"+self.sim_time_string + "'"))
+    # def call_save_map(self):
+        # loginfo("hook called with path: %s",self.map_path + "map_"+self.sim_time_string);
+        # return subprocess.check_output(["cd "+self.map_path+" && rosrun map_server map_save -f map_"])
+        # loginfo(subprocess.check_output(["rosrun","map_server","map_saver","-f","map_"+self.sim_time_string]))
+        # loginfo(os.system("/bin/bash -c 'rosrun map_server map_saver -f map_"+self.sim_time_string + "'"))
     def get_tf_pose_callback(self, pose):
         self.tf_pose = pose
         if self.pre_pose is None:
@@ -47,6 +53,8 @@ class ExplorationEvaluator:
         save_duration = rospy.get_param("~data_save_duration",1)
         self.csv_save_path = rospy.get_param("~save_path", 'csvs')
         self.distance_precesion = rospy.get_param("~distance_precesion",3)
+        self.sim_time_string =  rospy.get_param("~sim_time_str",'none')
+        self.map_path = rospy.get_param("~map_path", 'saved_map/')
 
         self.odom_pose = None
         self.tf_pose = None
@@ -58,9 +66,11 @@ class ExplorationEvaluator:
         if not os.path.isdir(self.csv_save_path):
             logdebug("path does not exisit! %s", self.csv_save_path)
             os.mkdir(self.csv_save_path)
+        if self.sim_time_string is 'none':
+            self.sim_time_string = dt.datetime.now().strftime("%d%m%Y_%H%M%S")
         self.csv_save_path = os.path.join(self.csv_save_path,
                                           'exploration_data_'+
-                                          dt.datetime.now().strftime("%d%m%Y_%H%M%S")+
+                                          self.sim_time_string+
                                           '.csv')
 
         if not os.path.exists(self.csv_save_path):
@@ -76,6 +86,6 @@ class ExplorationEvaluator:
 
 if __name__ == '__main__':
 
-    ExplorationEvaluator('exploration_evaluator')
-
+    ee = ExplorationEvaluator('exploration_evaluator')
+    # rospy.on_shutdown(ee.call_save_map)
     rospy.spin()

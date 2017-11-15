@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
 
   <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
   </node>
@@ -7,6 +8,6 @@
   <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
     <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
     <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
-    <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load"/>
+
   </node>
 </launch>

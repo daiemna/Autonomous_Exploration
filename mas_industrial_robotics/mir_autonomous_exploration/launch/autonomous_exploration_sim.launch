@@ -4,5 +4,19 @@
   <include file="$(find mir_2dslam)/ros/launch/2dslam.launch"/>
   <include file="$(find hector_exploration_node)/launch/exploration_planner.launch"/>
   <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/>
-  <include file="$(find mir_autonomous_exploration)/launch/exploration_evaluator.launch"/>
+  <!-- <include file="$(find mir_autonomous_exploration)/launch/exploration_evaluator.launch">
+    <rosparam param='sim_time_str' ns="exploration_evaluator">$(arg sim_time_str)</rosparam>
+    <rosparam param='map_path' ns="exploration_evaluator">$(arg map_path)</rosparam>
+  </include> -->
+  <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
+
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+  </node>
+
+  <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
+    <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
+    <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
+    <param name='sim_time_str' value="$(optenv SIM_TIME !!NO_SIM_TIME_SET!!)" />
+    <param name='map_path' value="$(optenv MAP_PATH !!NO_MAP_PATH!!)" />
+  </node>
 </launch>
