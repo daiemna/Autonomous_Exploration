@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot" default="$(optenv ROBOT !!ROBOT NOT SET!!)" />
+  <arg name="robot_env" default="$(optenv ROBOT_ENV !!ROBOT_ENV NOT SET!!)" />
+  <rosparam file="$(find mir_autonomous_exploration)/config/vob_config.yml" command="load" ns="virtual_obstacle_builder"/>
+
+  <node pkg="mir_autonomous_exploration" type="virtual_obstacle_builder" name="virtual_obstacle_builder" output="screen">
+    <rosparam file="$(find hector_exploration_node)/config/costmap.yaml" command="load" />
+    <rosparam file="$(find mir_hardware_config)/$(arg robot)/config/base_footprint.yaml" command="load" ns="global_costmap"/>
+  </node>
+</launch>
