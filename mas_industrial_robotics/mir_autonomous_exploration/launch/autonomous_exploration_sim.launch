@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find mir_bringup_sim)/robot.launch"/>
+  <include file="$(find mir_2dslam)/ros/launch/2dslam.launch" />
+
+  <!-- enable following lines to add VirtualObstacleBuilder. -->
+  <!-- <arg name="robot" default="$(optenv ROBOT !!ROBOT NOT SET!!)" />
+  <arg name="robot_env" default="$(optenv ROBOT_ENV !!ROBOT_ENV NOT SET!!)" />
+  <node pkg="mir_autonomous_exploration" type="virtual_obstacle_builder" name="virtual_obstacle_builder" output="screen">
+    <rosparam file="$(find hector_exploration_node)/config/costmap.yaml" command="load" />
+    <rosparam file="$(find mir_hardware_config)/$(arg robot)/config/base_footprint.yaml" command="load" ns="global_costmap"/>
+  </node>
+  <remap from="map" to="/new_map"/> -->
+
+  <include file="$(find hector_exploration_node)/launch/exploration_planner.launch"/>
+  <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/>
+
+
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+  </node>
+
+  <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
+  <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
+    <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
+    <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
+    <param name='sim_time_str' value="$(optenv SIM_TIME !!NO_SIM_TIME_SET!!)" />
+    <param name='map_path' value="$(optenv MAP_PATH !!NO_MAP_PATH!!)" />
+  </node>
+</launch>

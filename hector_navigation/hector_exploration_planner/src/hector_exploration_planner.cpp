@@ -1317,7 +1317,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
 
   // check if there is a subcriber to frontier publisher.
   bool publishing_frontiers = (frontier_pub_.getNumSubscribers() > 0);
-  ROS_DEBUG("findFrontiers : frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
+  // ROS_DEBUG("findFrontiers : frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
   std::vector<geometry_msgs::Pose> fronts;
 
   // check for all cells in the occupancy grid whether or not they are frontier cells
@@ -1333,7 +1333,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
       }
     }
   }
-
+  ROS_DEBUG("Found frontier : %d", allFrontiers.size());
   if(p_cluster_count_ > 0 && p_cluster_count_ < allFrontiers.size()){
     // Add Clustring here.
     cv::Mat points(allFrontiers.size(), 1, CV_32FC2), labels, centers;
