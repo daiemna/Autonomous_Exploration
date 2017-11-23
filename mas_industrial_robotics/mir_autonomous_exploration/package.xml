@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mir_autonomous_exploration</name>
-  <version>0.0.1</version>
+  <version>0.1.1</version>
   <description>The mir_autonomous_exploration package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
@@ -13,7 +13,7 @@
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>MIT</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
@@ -50,20 +50,34 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>actionlib</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>mir_2dslam</build_depend>
+  <build_depend>cv_bridge</build_depend>s
   <build_depend>rospy</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rosconsole</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>map_msgs</build_depend>
+  <build_depend>costmap_2d</build_depend>
+
   <build_export_depend>actionlib</build_export_depend>
   <build_export_depend>cv_bridge</build_export_depend>
-  <build_export_depend>mir_2dslam</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rosconsole</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>geometry_msgs</build_export_depend>
+  <build_export_depend>map_msgs</build_export_depend>
+  <build_export_depend>costmap_2d</build_export_depend>
+
   <exec_depend>actionlib</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
-  <exec_depend>mir_2dslam</exec_depend>
   <exec_depend>rospy</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rosconsole</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>map_msgs</exec_depend>
+  <exec_depend>costmap_2d</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

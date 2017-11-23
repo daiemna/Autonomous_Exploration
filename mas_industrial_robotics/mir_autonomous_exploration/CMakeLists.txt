@@ -10,15 +10,25 @@ project(mir_autonomous_exploration)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   cv_bridge
-  mir_2dslam
+  # mir_2dslam
   rospy
+  roscpp
+  rosconsole
   std_msgs
+  geometry_msgs
+  map_msgs
+  costmap_2d
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(OpenCV REQUIRED)
 
+message(STATUS "OpenCV library status:")
+message(STATUS "    version: ${OpenCV_VERSION}")
+message(STATUS "    libraries: ${OpenCV_LIBS}")
+message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -105,10 +115,22 @@ catkin_python_setup()
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES mir_autonomous_exploration
-#  CATKIN_DEPENDS actionlib cv_bridge mir_2dslam rospy std_msgs
-#  DEPENDS system_lib
+ INCLUDE_DIRS include
+ LIBRARIES
+   ${PROJECT_NAME}
+   virtual_obstacle_builder
+ CATKIN_DEPENDS
+   actionlib
+   cv_bridge
+  #  mir_2dslam
+   rospy
+   roscpp
+   rosconsole
+   std_msgs
+   geometry_msgs
+   map_msgs
+   costmap_2d
+ DEPENDS OpenCV
 )
 
 ###########
@@ -120,12 +142,14 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/mir_autonomous_exploration.cpp
 # )
+# add_library(virtual_obstacle_builder src/virtual_obstacle_builder.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -136,6 +160,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/mir_autonomous_exploration_node.cpp)
+add_executable(virtual_obstacle_builder src/virtual_obstacle_builder.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,7 +176,7 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
+target_link_libraries(virtual_obstacle_builder ${catkin_LIBRARIES} ${OpenCV_LIBS})
 #############
 ## Install ##
 #############
