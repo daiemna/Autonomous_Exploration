@@ -20,7 +20,9 @@ class ExplorationEvaluator:
         with open(self.csv_save_path, 'a') as myf:
             myf.write("%s;%f;%f\n"%(date, distance, area))
             logdebug("wrote : %s;%f;%f",date, distance, area)
-        loginfo(os.system("/bin/bash -c 'rosrun map_server map_saver -f map_"+self.sim_time_string + "'"))
+        loginfo(os.system("/bin/bash -c 'rosrun map_server map_saver -f " +
+                          os.path.join(self.map_path,"map_" +self.sim_time_string) +
+                          "'"))
     # def call_save_map(self):
         # loginfo("hook called with path: %s",self.map_path + "map_"+self.sim_time_string);
         # return subprocess.check_output(["cd "+self.map_path+" && rosrun map_server map_save -f map_"])
@@ -66,6 +68,9 @@ class ExplorationEvaluator:
         if not os.path.isdir(self.csv_save_path):
             logdebug("path does not exisit! %s", self.csv_save_path)
             os.mkdir(self.csv_save_path)
+        if not os.path.isdir(self.map_path):
+            logdebug("path does not exisit! %s", self.map_path)
+            os.mkdir(self.map_path)
         if self.sim_time_string is 'none':
             self.sim_time_string = dt.datetime.now().strftime("%d%m%Y_%H%M%S")
         self.csv_save_path = os.path.join(self.csv_save_path,
