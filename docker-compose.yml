@@ -1,0 +1,55 @@
+version: '3'
+services:
+  mir_bringup_sim:
+    build: .
+    image: dna/mir_sim:configured
+    container_name: mir_bringup_sim
+    ports:
+      - "11311:11311"
+    environment:
+      # - DISPLAY=$DISPLAY
+      - ROBOT=youbot-brsu-5
+      - ROBOT_ENV=brsu-c069
+      - ROSCONSOLE_CONFIG_FILE=/catkin_ws/src/daiem_ros_console.config
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      # - $HOME/.Xauthority:/catkin_ws/.Xauthority
+    command: ["roslaunch", "mir_bringup_sim", "robot.launch"]
+
+  mir_slam:
+    image : dna/mir_sim:configured
+    container_name: mir_slam
+    environment:
+      # - DISPLAY=0
+      - ROS_MASTER_URI=http://mir_bringup_sim:11311/
+      - ROBOT=youbot-brsu-5
+      - ROBOT_ENV=brsu-c069
+      - ROSCONSOLE_CONFIG_FILE=/catkin_ws/src/daiem_ros_console.config
+    command: /wait-for-it.sh mir_bringup_sim:11311 --timeout=0 -- roslaunch mir_2dslam 2dslam.launch
+    depends_on:
+      - mir_bringup_sim
+
+  hector_exploration_planner:
+    image : dna/mir_sim:configured
+    container_name: hector_exploration_planner
+    environment:
+      # - DISPLAY=0
+      - ROS_MASTER_URI=http://mir_bringup_sim:11311/
+      - ROBOT=youbot-brsu-5
+      - ROBOT_ENV=brsu-c069
+      - ROSCONSOLE_CONFIG_FILE=/catkin_ws/src/daiem_ros_console.config
+    command: /wait-for-it.sh mir_bringup_sim:11311 --timeout=0 -- roslaunch hector_exploration_node exploration_planner.launch
+    depends_on:
+      - mir_slam
+
+  hector_exploration_controller:
+    image : dna/mir_sim:configured
+    container_name: hector_exploration_controller
+    environment:
+      - ROS_MASTER_URI=http://mir_bringup_sim:11311/
+      - ROBOT=youbot-brsu-5
+      - ROBOT_ENV=brsu-c069
+      - ROSCONSOLE_CONFIG_FILE=/catkin_ws/src/daiem_ros_console.config
+    command: /wait-for-it.sh mir_bringup_sim:11311 --timeout=0 -- rosrun hector_exploration_controller reactive_exploration_controller
+    depends_on:
+      - mir_slam

@@ -254,7 +254,6 @@ bool HectorExplorationPlanner::doExploration(const geometry_msgs::PoseStamped &s
     return doInnerExploration(start,plan);
   }
   if(p_benifit_exploration){
-    // TODO : assigne utility value to each frontier.
     build_frontier_utility_array_(goals);
   }
   // assigne cost to each frontier and its path
@@ -1333,7 +1332,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
       }
     }
   }
-  ROS_DEBUG("Found frontier : %d", allFrontiers.size());
+  ROS_DEBUG("Found frontier : %d", (int)allFrontiers.size());
   if(p_cluster_count_ > 0 && p_cluster_count_ < allFrontiers.size()){
     // Add Clustring here.
     cv::Mat points(allFrontiers.size(), 1, CV_32FC2), labels, centers;

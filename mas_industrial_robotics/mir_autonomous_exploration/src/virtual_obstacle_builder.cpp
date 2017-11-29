@@ -1,4 +1,3 @@
-
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -33,13 +32,7 @@ public:
   void initialize(){
     ros::NodeHandle nh;
     costmap_ros_ = new costmap_2d::Costmap2DROS("global_costmap", tfl_);
-    // #ifdef COSTMAP_2D_LAYERED_COSTMAP_H_
-    //   costmap_ = costmap_ros_->getCostmap();
-    // #else
-    //   if (costmap_) delete costmap_;
-    //   costmap_ = new costmap_2d::Costmap2D;
-    //   costmap_ros_->getCostmapCopy(*costmap_);
-    // #endif
+
     mode_ = VOB_OBSTACLE_BUILDER;
     command_sub_ = nh.subscribe("vob_command",1,&VirtualObstacleBuilder::callbackVOBCommand,this);
     clicked_point_sub_ = nh.subscribe("clicked_point", 1, &VirtualObstacleBuilder::callbackClickedPoints,this);
@@ -68,22 +61,18 @@ public:
     cv_bridge::CvImage img_bridge;
     sensor_msgs::Image img_msg;
 
-    std_msgs::Header header; // empty header
-    // header.seq = cluster_image_counter; // user defined counter
+    std_msgs::Header header;
 
-    header.stamp = ros::Time::now(); // time
+    header.stamp = ros::Time::now();
     img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, image);
-    img_bridge.toImageMsg(img_msg); // from cv_bridge to sensor_msgs::Image
+    img_bridge.toImageMsg(img_msg);
     obstacle_map_pub_.publish(img_msg);
     ROS_DEBUG_STREAM("Published image of map obstacle : " << image.cols << "x" << image.rows);
-    // cluster_image_counter += 1;
-    // return true;
   }
 
   void publish_points_polygon(std::vector<geometry_msgs::Point>& points, std::string frame_id){
     geometry_msgs::PolygonStamped poly_msg;
     poly_msg.header.frame_id=frame_id;
-    // poly_msg.polygon.points;
     for(int i=0; i < points.size(); ++i){
         geometry_msgs::Point32 pt;
         pt.x = (float)points[i].x;
@@ -136,7 +125,6 @@ public:
         points.at<cv::Point>(j) = cv::Point(mx, my);
       }
       ROS_DEBUG_STREAM("map Points : \n" << points);
-      // obstacle_points.push_back(points);
       cv::fillConvexPoly(image, points, area_color, 8);
     }
     if(cvt_color){
@@ -146,7 +134,6 @@ public:
         for(int j=0; j < image.cols; ++j){
           int pix_val = (int)image.at<unsigned char>(i, j);
           if(pix_val == 255){
-            // ROS_DEBUG("map value : %d",pix_val);
             ob_pix_count += 1;
           }
         }
@@ -191,10 +178,6 @@ public:
         }else if(pix_val == 76){
           new_map_msg.data[i] = 0;
         }
-        // if(pix_val != 0 && pix_val != 255){
-        //   ROS_DEBUG("map value : %d",pix_val);
-        // }
-
       }
     }
     ROS_DEBUG("published new map!");
@@ -210,7 +193,6 @@ private:
 
 protected:
 
-  costmap_2d::Costmap2D* costmap_;
   costmap_2d::Costmap2DROS* costmap_ros_;
   tf::TransformListener tfl_;
 
@@ -225,7 +207,6 @@ protected:
   std::vector<geometry_msgs::Point> vob_points;
   std::vector<std::vector<geometry_msgs::Point> > indexes_;
   std::vector<geometry_msgs::Point> eliminate_area_poly_;
-  // std::vector<unsigned int> map_data_;
 };
 
 int main(int argc, char **argv) {
