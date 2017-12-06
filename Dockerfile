@@ -8,7 +8,7 @@ MAINTAINER Daiem Ali <daiem.ali@smail.inf.h-brs.de>
 ADD ./ /catkin_ws/src/
 RUN apt-get -y update && \
     apt-get install -y cmake g++ bash-completion build-essential git \
-    ros-indigo-hector-map-tools ros-indigo-hector-nav-msgs && \
+    ros-indigo-hector-map-tools ros-indigo-hector-nav-msgs && ros-indigo-robot-pose-publisher && \
     HOME=/catkin_ws && \
     rosdep update
 
