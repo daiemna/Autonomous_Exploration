@@ -2,3 +2,4 @@ save_path: 'saved_csv'
 data_save_duration: 1
 distance_precesion: 3
 map_path: 'saved_map'
+sim_time_str: 'none'

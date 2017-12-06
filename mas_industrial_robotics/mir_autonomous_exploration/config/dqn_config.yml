@@ -1,0 +1,6 @@
+goal_reached_dist : 0.5
+max_frontier_count : 10
+use_inflated_obstacles : false
+inscribed_circle_radius_area: 10
+sensor_range: 4.5
+max_laser_readings_count: 721

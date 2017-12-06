@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="mir_autonomous_exploration" type="reactive_exploration_controller" name="exploration_controller" output="screen">
+    <!-- <remap from="cmd_vel" to="/cmd_vel_prio_medium"/> -->
+  </node>
+
+</launch>

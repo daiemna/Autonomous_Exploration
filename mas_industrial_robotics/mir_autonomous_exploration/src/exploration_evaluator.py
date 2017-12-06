@@ -71,7 +71,7 @@ class ExplorationEvaluator:
         if not os.path.isdir(self.map_path):
             logdebug("path does not exisit! %s", self.map_path)
             os.mkdir(self.map_path)
-        if self.sim_time_string is 'none':
+        if self.sim_time_string == 'none':
             self.sim_time_string = dt.datetime.now().strftime("%d%m%Y_%H%M%S")
         self.csv_save_path = os.path.join(self.csv_save_path,
                                           'exploration_data_'+
