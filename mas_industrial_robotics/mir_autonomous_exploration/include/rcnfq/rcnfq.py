@@ -5,6 +5,8 @@
 import numpy as np
 import time
 import os.path as osp
+import os
+import ast
 
 from keras.models import Sequential, model_from_json
 from keras.layers.core import Dense, Activation, Flatten, Dropout
@@ -48,7 +50,9 @@ class NFQ:
                  lr=0.01,
                  max_iters=20000,
                  max_q_predicted=100000,
-                 save_path=None):
+                 save_path=None,
+                 activations='tanh',
+                 e_greedy=False):
         """Create an instance of the NFQ algorithm for a particular agent and
         environment.
 
@@ -87,17 +91,33 @@ class NFQ:
         self.nb_actions = nb_actions
         self.state_dim = state_dim
         self.lr = lr
-
+        self.activation = activations
         self._loss_history = np.zeros((max_iters))
         self._loss_history_test = np.zeros((max_iters))
 
         self._q_predicted = np.empty((max_q_predicted), dtype=np.float32)
         self._q_predicted[:] = np.NAN
         self._q_predicted_counter = 0
+        if e_greedy:
+            a = np.exp(-np.linspace(1,10,int(max_iters/4),True));
+            self.epsilon = a/max(a);
+        else:
+            self.epsilon = [0.0];
+        self.is_last_action_random = False
+        self.state_file = "/tmp/q_state.json"
+        if osp.exists(self.state_file):
+            with open(self.state_file, "r") as js:
+                self.state = ast.literal_eval(js.read())
+        else:
+            self.state = {}
+        self.k = self.state.get("k", 0);
 
         self.terminal_states = terminal_states
         if save_path is None:
-            save_path = "/tmp/nfq_{}_{}_{}".format(state_dim, nb_actions, ('x').join(map(str,mlp_layers)))
+            save_dir = "q_models/"
+            if not osp.exists(save_dir):
+                os.mkdir(save_dir)
+            save_path = save_dir+"nfq_{}_{}_{}".format(state_dim, nb_actions, ('x').join(map(str,mlp_layers)))
         self.json_path = save_path+".json"
         self.hd5_path = save_path+".hdf5"
         self.checkpointer = \
@@ -302,11 +322,23 @@ class NFQ:
             self._last_loss_history_test = hist.history['val_loss']
 
         self.k += num_iters
+        self.change_key_save("k", self.k)
+
+    def change_key_save(self, key,value):
+        self.state[key] = value
+        with open(self.state_file, "w") as js:
+            js.write(str(self.state))
 
     def greedy_action(self, s):
         """Return the action that maximizes expected reward from a given state.
            TODO: Vectorize this function for improved performance.
         """
+        if(self.k < len(self.epsilon)):
+            if(np.random.rand() < self.epsilon[self.k]):
+                rand_act = np.random.randint(self.nb_actions)
+                rospy.logdebug("taking random action! %d", rand_act )
+                self.is_last_action_random = True
+                return rand_act;
         Q_value = np.zeros(self.nb_actions)
         for a in np.arange(self.nb_actions):
             Q_value[a] = self._Q_value(s, a)
@@ -319,6 +351,7 @@ class NFQ:
         logdebug('Stored predicted Q-value of {} for action {}'.\
               format(self._q_predicted[self._q_predicted_counter], greedy_action))
         self._q_predicted_counter += 1
+        self.is_last_action_random = False
 
         return greedy_action
 
@@ -350,9 +383,9 @@ class NFQ:
                               input_dim=self.state_dim + self.nb_actions))
                 else:
                     model.add(Dense(mlp_layers[i]))
-                model.add(Activation('relu'))
+                model.add(Activation(self.activation))
             model.add(Dense(1))
-            model.add(Activation('relu'))
+            model.add(Activation(self.activation))
             with open(self.json_path, "w") as js:
                 js.write(model.to_json())
         rmsprop = RMSprop(lr=self.lr)

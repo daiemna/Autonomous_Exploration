@@ -17,6 +17,7 @@
   <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/> -->
 
   <!-- enable following lines to do Q_Learned Exploration -->
+  <include file="$(find mir_autonomous_exploration)/launch/q_network_server.launch"/>
   <include file="$(find mir_autonomous_exploration)/launch/q_exploration_planner.launch"/>
   <include file="$(find mir_autonomous_exploration)/launch/reactive_controller.launch"/>
 

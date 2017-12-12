@@ -5,16 +5,26 @@
 #include <mir_autonomous_exploration/FrontierArea.h>
 #include <mir_autonomous_exploration/GetRobotDestination.h>
 #include <mir_autonomous_exploration/DQNExplorationService.h>
+
+#include <nav_msgs/GetMap.h>
+
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <sensor_msgs/LaserScan.h>
+
 #include <std_msgs/Float32.h>
+
+#include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <boost/shared_array.hpp>
 #include <math.h>
 
 #include <opencv2/opencv.hpp>
+
+#define UNKNOWN_AREA_VALUE 50
 
 class QExplorationPlanner{
 public:
@@ -22,7 +32,8 @@ public:
   costmap_ros_(0),
   costmap_(0),
   map_width_(0),
-  map_height_(0){
+  map_height_(0),
+  occupancy_grid_array_(NULL){
     initalize();
     ROS_INFO("init done!");
   }
@@ -40,24 +51,36 @@ public:
     pnh.param<int>("max_frontier_count", p_cluster_count_, 10);
     pnh.param<bool>("use_inflated_obstacles", p_use_inflated_obs_, false);
     pnh.param<int>("inscribed_circle_radius_area", p_inscribed_circle_frontier_radius_, 5);
+    pnh.param<int>("max_distance_possible",MAX_DIST, 2000);
     nh.param<double>("sensor_range", p_sensor_range_, 4.5);
+
+
     robot_mileage_ = -1.0;
     setupMap();
     destination_server_ = pnh.advertiseService("robot_destination",
                                               &QExplorationPlanner::qlearned_destination_callback,
                                               this);
     deep_q_network_client_ = nh.serviceClient<mir_autonomous_exploration::DQNExplorationService>("dqn_service");
+    dynamic_map_client_ = nh.serviceClient<nav_msgs::GetMap>("/dynamic_map");
 
     robot_pose_sub_ = nh.subscribe("robot_pose", 1, &QExplorationPlanner::robot_pose_cb, this);
     laser_scan_sub_ = nh.subscribe("scan_unified", 1, &QExplorationPlanner::laser_scan_cb, this);
 
+    frontier_pub_ = nh.advertise<geometry_msgs::PoseArray>("frontiers", 1, true);
+    reward_pub_ = nh.advertise<std_msgs::Float32>("exploration_reward", 100, true);
+    frontier_area_pub_ = nh.advertise<sensor_msgs::Image>("frontier_area_image", 1, true);
+    map_image_pub_ = nh.advertise<sensor_msgs::Image>("map_image", 1, true);
   }
 
   bool qlearned_destination_callback(mir_autonomous_exploration::GetRobotDestination::Request &req,
                                      mir_autonomous_exploration::GetRobotDestination::Response &res){
       // res.destination.header.frame_id = "map";
       ROS_DEBUG("New Request for Destination!");
+      ROS_DEBUG("last goal succeded : %s",
+      (req.last_goal_succeded == mir_autonomous_exploration::GetRobotDestination::Request::YES ? "YES":"NO"));
+
       setupMap();
+      get_occupancy_grid_map();
       float known_area = get_map_explored_area_cells();
 
       mir_autonomous_exploration::DQNExplorationService exploration_srv;
@@ -85,18 +108,25 @@ public:
       ROS_DEBUG("known_area %f", known_area);
       ROS_DEBUG("last_know_area_ %f", last_know_area_);
       ROS_DEBUG("know area difference %f", (known_area - last_know_area_));
-      exploration_srv.request.lastReward = 0.0;
+      if(req.last_goal_succeded == mir_autonomous_exploration::GetRobotDestination::Request::UNKNOWN)
+        exploration_srv.request.lastReward = 0.0;
+      else if(req.last_goal_succeded == mir_autonomous_exploration::GetRobotDestination::Request::NO)
+        exploration_srv.request.lastReward = -1.0;
+      else
+        exploration_srv.request.lastReward = 0.0;
 
-      if((known_area - last_know_area_) > 0.0){
+      if((known_area - last_know_area_) > 0.0 && exploration_srv.request.lastReward >= 0.0){
           exploration_srv.request.lastReward += (known_area - last_know_area_)/area_covered;
       }
-      if(dist_cell > 2){
-          exploration_srv.request.lastReward += 1/dist_cell;
-      }
+      // if(dist_cell > 2){
+      //     exploration_srv.request.lastReward -= dist_cell/MAX_DIST;
+      // }
 
 
       ROS_DEBUG("Reward accumlated : %f", exploration_srv.request.lastReward);
-
+      std_msgs::Float32 pub_reward;
+      pub_reward.data = exploration_srv.request.lastReward;
+      reward_pub_.publish(pub_reward);
       if(!findFrontiers(exploration_srv.request.frontierPoses)){
         ROS_ERROR("Frontiers not found!");
         return false;
@@ -126,6 +156,61 @@ public:
       return false;
   }
 
+  bool get_occupancy_grid_map(){
+    nav_msgs::GetMap map_srv;
+    // std::map<int8_t, int> hist;
+
+    if(dynamic_map_client_.call(map_srv)){
+      const int map_size = (int)map_srv.response.map.data.size();
+      occupancy_grid_data_.clear();
+      occupancy_grid_data_ = map_srv.response.map.data;
+      // for(int i=0; i < map_size; ++i){
+      //   hist[map_srv.response.map.data[i]] += 1;
+      // }
+      // for(int i = 0; i < hist.size(); ++i)
+      //   ROS_DEBUG_STREAM("hist " << i << " : " << hist[(int8_t)i]);
+      // std::copy(map_srv.response.map.data.begin(), map_srv.response.map.data.end(), occupancy_grid_array_);
+      ROS_DEBUG("Map copied! map size : %d", (int)occupancy_grid_data_.size());
+      if(map_image_pub_.getNumSubscribers() > 0){
+        publish_map_image();
+
+      }
+      return true;
+    }
+    ROS_INFO("Map service failuer: map size : %d", (int)occupancy_grid_data_.size());
+    return false;
+  }
+  void publish_map_image(){
+    ROS_DEBUG("publish_map_image : ");
+    cv::Mat map_image = cv::Mat(map_height_,map_width_, CV_8UC1);
+    // std::map<int8_t, int> hist;
+    // std::fill_n(hist.begin(), 255, 0);
+    for(int row = 0; row < map_height_; ++row){
+      for(int col = 0; col < map_width_; ++col){
+        // int index = row+((map_width_*row) + col);
+        int index = costmap_->getIndex(row, col);
+        map_image.at<int8_t>(row,col) = occupancy_grid_data_[index];
+        // hist[occupancy_grid_data_[index]] += 1;
+        // if((int)occupancy_grid_data_[index] != 255){
+        //   ROS_DEBUG("value is %d", (int)occupancy_grid_data_[index]);
+        // }
+      }
+    }
+    // for(int i=0; i < occupancy_grid_data_.size(); ++i){
+    //   hist[occupancy_grid_data_[i]] += 1;
+    // }
+    // for(int i = 0; i < hist.size(); ++i)
+    //   ROS_DEBUG_STREAM("hist " << i << " : " << hist[(int8_t)i]);
+    cv_bridge::CvImage img_bridge;
+    sensor_msgs::Image img_msg;
+    std_msgs::Header header; // empty header
+    // header.seq = cluster_image_counter; // user defined counter
+    header.stamp = ros::Time::now(); // time
+    img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, map_image);
+    img_bridge.toImageMsg(img_msg); // from cv_bridge to sensor_msgs::Image
+    map_image_pub_.publish(img_msg);
+
+  }
   void laser_scan_cb(sensor_msgs::LaserScan msg){
     laser_ranges_ = msg.ranges;
     // ROS_DEBUG("number of laser_readings %d", (int)laser_ranges_.size());
@@ -153,30 +238,67 @@ public:
                          std::vector<geometry_msgs::Pose> frontiers){
     ROS_DEBUG("getting %d frontiers area",(int)frontiers.size());
     areas.clear();
+    bool publishing = (frontier_area_pub_.getNumSubscribers() > 0);
+    cv::Mat frontiers_image;
     for(int i=0; i < frontiers.size(); ++i){
         mir_autonomous_exploration::FrontierArea area;
         area.data.clear();
+
         ROS_DEBUG("allocated area for %d", i);
         unsigned int mx,my;
         costmap_->worldToMap(frontiers[i].position.x, frontiers[i].position.y, mx, my);
-        for(int x = mx - p_inscribed_circle_frontier_radius_;
-            x < mx + p_inscribed_circle_frontier_radius_; ++x){
-              for(int y = my - p_inscribed_circle_frontier_radius_;
-                  y < my + p_inscribed_circle_frontier_radius_; ++y){
-                    unsigned int index = x*y;
+        int imx = static_cast<int>(mx), imy=static_cast<int>(my);
+        ROS_DEBUG("(mx, my) : (%u,%u)", imx, imy);
+        ROS_DEBUG("init x, init y : (%d, %d)", imx - p_inscribed_circle_frontier_radius_, imy - p_inscribed_circle_frontier_radius_);
+        ROS_DEBUG("end x, end y : (%d, %d)", imx + p_inscribed_circle_frontier_radius_, imy + p_inscribed_circle_frontier_radius_);
+        cv::Mat area_image(p_inscribed_circle_frontier_radius_*2, p_inscribed_circle_frontier_radius_*2, CV_8UC1);
+        int x_offset = imx - p_inscribed_circle_frontier_radius_;
+        int y_offset = imy - p_inscribed_circle_frontier_radius_;
+        int area_length = p_inscribed_circle_frontier_radius_*2;
+        unsigned int valid_indices = 0;
+        unsigned int invalid_indices = 0;
+        for(int x = imx - p_inscribed_circle_frontier_radius_;
+            x < imx + p_inscribed_circle_frontier_radius_; ++x){
+              for(int y = imy - p_inscribed_circle_frontier_radius_;
+                  y < imy + p_inscribed_circle_frontier_radius_; ++y){
+                    int index = costmap_->getIndex(x, y);
                     // ROS_DEBUG("index %u", index);
                     if(isValid(index)){
-                        area.data.push_back((int)(occupancy_grid_array_[index] == costmap_2d::LETHAL_OBSTACLE ||
-                                                   occupancy_grid_array_[index] == costmap_2d::FREE_SPACE));
+                        area.data.push_back((int)occupancy_grid_data_[index]);
+                        if(publishing)
+                          area_image.at<char>(x-x_offset, y-y_offset) = occupancy_grid_data_[index];
                         // ROS_DEBUG("added value to area %c", occupancy_grid_array_[index]);
+                        ++valid_indices;
                     }else{
-                        area.data.push_back((int)2);
-                        ROS_DEBUG("index %u added value to invalid area %c", index, costmap_2d::NO_INFORMATION);
+                        area.data.push_back(UNKNOWN_AREA_VALUE);
+                        if(publishing)
+                          area_image.at<char>(x-x_offset, y-y_offset) = (char)UNKNOWN_AREA_VALUE;
+                        // ROS_DEBUG("index %u added value to invalid area %c", index, costmap_2d::NO_INFORMATION);
+                        ++invalid_indices;
                     }
               }
         }
+        ROS_DEBUG("valid_indices: %u , invalid_indices : %u",valid_indices, invalid_indices);
+        if(publishing){
+          if(i == 0){
+            frontiers_image = area_image;
+          }else{
+            cv::hconcat(area_image, frontiers_image, frontiers_image);
+          }
+        }
         ROS_DEBUG("Built Area size : %d", (int)area.data.size());
         areas.push_back(area);
+      }
+      //Transmit Mat
+      if(publishing){
+        cv_bridge::CvImage img_bridge;
+        sensor_msgs::Image img_msg;
+        std_msgs::Header header; // empty header
+        // header.seq = cluster_image_counter; // user defined counter
+        header.stamp = ros::Time::now(); // time
+        img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, frontiers_image);
+        img_bridge.toImageMsg(img_msg); // from cv_bridge to sensor_msgs::Image
+        frontier_area_pub_.publish(img_msg);
       }
   }
 
@@ -190,9 +312,8 @@ public:
     frontiers.clear();
 
     // check if there is a subcriber to frontier publisher.
-    // bool publishing_frontiers = (frontier_pub_.getNumSubscribers() > 0);
-    bool publishing_frontiers = false;
-    // ROS_DEBUG("frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
+    bool publishing_frontiers = (frontier_pub_.getNumSubscribers() > 0);
+    ROS_DEBUG("frontier subs : %d", (int)frontier_pub_.getNumSubscribers());
     std::vector<geometry_msgs::Pose> fronts;
 
     // check for all cells in the occupancy grid whether or not they are frontier cells
@@ -252,8 +373,8 @@ public:
         geometry_msgs::PoseArray frontiers_msg;
         frontiers_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
         frontiers_msg.poses = fronts;
-        // frontier_pub_.publish(frontiers_msg);
-        // ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
+        frontier_pub_.publish(frontiers_msg);
+        ROS_DEBUG("Published %u frontiers!",(unsigned int)fronts.size());
       }
       // std::cin >> key;
       // if( key == 27 || key == 'q' || key == 'Q' ) // 'ESC'
@@ -503,11 +624,19 @@ private:
 
   ros::ServiceServer destination_server_;
   ros::ServiceClient deep_q_network_client_;
+  ros::ServiceClient dynamic_map_client_;
+
   ros::Subscriber robot_pose_sub_;
   ros::Subscriber laser_scan_sub_;
 
+  ros::Publisher frontier_pub_;
+  ros::Publisher reward_pub_;
+  ros::Publisher frontier_area_pub_;
+  ros::Publisher map_image_pub_;
+
   const unsigned char* occupancy_grid_array_;
   boost::shared_array<int> frontier_map_array_;
+  std::vector<int8_t> occupancy_grid_data_;
 
   geometry_msgs::Pose robot_pose_;
   std::vector<float> laser_ranges_;
@@ -525,6 +654,7 @@ private:
   bool p_use_inflated_obs_;
   int p_inscribed_circle_frontier_radius_;
   double p_sensor_range_;
+  int MAX_DIST;
 };
 
 

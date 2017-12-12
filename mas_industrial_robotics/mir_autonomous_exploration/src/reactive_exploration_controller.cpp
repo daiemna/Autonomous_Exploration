@@ -68,6 +68,13 @@ public:
     if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED ||
        move_base_client_.getState() == actionlib::SimpleClientGoalState::ABORTED ||
        first_time_){
+        if(first_time_ || move_base_client_.getState() == actionlib::SimpleClientGoalState::PREEMPTED){
+            srv_exploration_destination.request.last_goal_succeded = srv_exploration_destination.request.UNKNOWN;
+        }else if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+            srv_exploration_destination.request.last_goal_succeded = srv_exploration_destination.request.YES;
+        }else{
+            srv_exploration_destination.request.last_goal_succeded = srv_exploration_destination.request.NO;
+        }
         first_time_ = false;
         if(move_base_client_.getState() == actionlib::SimpleClientGoalState::ABORTED &&
            first_aborted_goal_id < 0){
