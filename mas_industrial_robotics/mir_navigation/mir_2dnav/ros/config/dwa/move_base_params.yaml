@@ -16,7 +16,7 @@ base_global_planner: mcr_global_planner/GlobalPlannerWithOrientations
 GlobalPlannerWithOrientations:
     use_grid_path: False
     use_dijkstra: True
-    allow_unknown: False
+    allow_unknown: True # chanaged by daiem ali.
     default_tolerance: 0.0          #previous value: 0.2
     visualize_potential: True
     use_quadratic: True
