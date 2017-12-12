@@ -9,3 +9,6 @@
 
 # docker files
 clear_docker.sh
+
+# sftp
+deployment-config.json
