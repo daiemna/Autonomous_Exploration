@@ -39,8 +39,8 @@
 
 #define STRAIGHT_COST 100
 // #define DIAGONAL_COST 141
-#define DIAGONAL_COST 100
-#define MAX_UTILITY 2000
+#define DIAGONAL_COST 140
+#define MAX_UTILITY 1000
 
 //#define STRAIGHT_COST 3
 //#define DIAGONAL_COST 4
@@ -861,7 +861,7 @@ bool HectorExplorationPlanner::build_frontier_utility_array_(std::vector<geometr
     }
 
     int goal_point = costmap_->getIndex(mx,my);
-    ROS_INFO("Goal Point : %d", goal_point);
+    ROS_DEBUG("Goal Point : %d", goal_point);
     astack.push(goal_point);
     std::vector<int> done_list;
     float utility_value = utility_trans_array_[goal_point];
@@ -902,7 +902,7 @@ bool HectorExplorationPlanner::build_frontier_utility_array_(std::vector<geometr
     }
     // Juliá et al. 2012
     utility_trans_array_[goal_point] = utility_value/(PI * pow(p_sensor_range_,2));
-    ROS_INFO_STREAM("Utility Value : " << utility_trans_array_[goal_point]);
+    ROS_DEBUG_STREAM("Utility Value : " << utility_trans_array_[goal_point]);
   }
   return false;
 }
@@ -1004,40 +1004,6 @@ bool HectorExplorationPlanner::buildexploration_trans_array_(const geometry_msgs
         }
       }
     }
-  // }else{
-  //   while(myqueue.size()){
-  //     int point = myqueue.front();
-  //     myqueue.pop();
-  //
-  //     unsigned int minimum = exploration_trans_array_[point];
-  //
-  //     int straightPoints[4];
-  //     getStraightPoints(point,straightPoints);
-  //     int diagonalPoints[4];
-  //     getDiagonalPoints(point,diagonalPoints);
-  //
-  //     // calculate the minimum exploration value of all adjacent cells
-  //     for (int i = 0; i < 4; ++i) {
-  //       if (isFree(straightPoints[i])) {
-  //         unsigned int neighbor_cost = minimum + STRAIGHT_COST;
-  //
-  //         if (exploration_trans_array_[straightPoints[i]] > neighbor_cost) {
-  //           exploration_trans_array_[straightPoints[i]] = neighbor_cost;
-  //           myqueue.push(straightPoints[i]);
-  //         }
-  //       }
-  //
-  //       if (isFree(diagonalPoints[i])) {
-  //         unsigned int neighbor_cost = minimum + DIAGONAL_COST;
-  //
-  //         if (exploration_trans_array_[diagonalPoints[i]] > neighbor_cost) {
-  //           exploration_trans_array_[diagonalPoints[i]] = neighbor_cost;
-  //           myqueue.push(diagonalPoints[i]);
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
 
   // transmitExplorationArray();
   ROS_DEBUG("[hector_exploration_planner] END: buildexploration_trans_array_");
@@ -1171,6 +1137,9 @@ bool HectorExplorationPlanner::getTrajectory(const geometry_msgs::PoseStamped &s
 
     currentPoint = nextPoint;
     maxDelta = 0;
+  }
+  if(!plan.empty()){
+      ROS_DEBUG("Goal point selected : %d", currentPoint);
   }
 
   ROS_DEBUG("[hector_exploration_planner] END: getTrajectory. at point %d Plansize %u", currentPoint, (unsigned int)plan.size());

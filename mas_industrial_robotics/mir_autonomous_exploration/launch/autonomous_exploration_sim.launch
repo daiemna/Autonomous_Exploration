@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- <remap from="scan_unified" to="/scan_front"/> -->
   <!-- <include file="$(find mir_bringup)/robot.launch"/> -->
   <include file="$(find mir_2dslam)/ros/launch/2dslam.launch" />
 
@@ -17,10 +16,10 @@
   <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/>
 
 
-  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
-  </node>
+ <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
+ <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+ </node>
 
-  <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
   <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
     <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
     <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>

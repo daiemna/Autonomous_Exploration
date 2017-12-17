@@ -16,7 +16,7 @@ base_global_planner: mcr_global_planner/GlobalPlannerWithOrientations
 GlobalPlannerWithOrientations:
     use_grid_path: False
     use_dijkstra: True
-    allow_unknown: False
+    allow_unknown: True
     default_tolerance: 0.0          #previous value: 0.2
     visualize_potential: True
     use_quadratic: True
@@ -25,4 +25,3 @@ GlobalPlannerWithOrientations:
     # Only for global planner with orientations:
     min_pose_distance: 0.05             # Minimum distance between poses
     max_omni_poses: 20                  # Maximum omni poses to drive (2 times start and end, so max. poses in omni will be 40)
-
