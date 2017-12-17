@@ -45,7 +45,7 @@ class ExplorationEvaluator:
 
     def __init__(self, name):
 
-        is_debug_level = rospy.get_param("~debuging",False)
+        is_debug_level = rospy.get_param("~debuging",True)
         # Initialize the node with rospy
         if is_debug_level:
             rospy.init_node(name, log_level=rospy.DEBUG)
