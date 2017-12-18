@@ -43,13 +43,15 @@ public:
   {
     ros::NodeHandle nh;
     while(!move_base_client_.waitForServer(ros::Duration(1.0))){
-      ROS_INFO("Waiting for the move_base action server to come up");
+
     }
     first_time_ = true;
     goal_id_ = 0;
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(1.0), &ReactiveExplorationController::timerPlanExploration, this, false );
 
     exploration_goal_service_client_ = nh.serviceClient<mir_autonomous_exploration::GetRobotDestination>("/q_exploration_planner/robot_destination");
+    while(!exploration_goal_service_client_.waitForExistence(ros::Duration(1.0)))
+      ROS_INFO("Waiting for the move_base action server to come up");
     first_aborted_goal_id = -1;
   }
 
@@ -67,8 +69,10 @@ public:
     // }
     if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED ||
        move_base_client_.getState() == actionlib::SimpleClientGoalState::ABORTED ||
+       move_base_client_.getState() == actionlib::SimpleClientGoalState::LOST ||
        first_time_){
-        if(first_time_ || move_base_client_.getState() == actionlib::SimpleClientGoalState::PREEMPTED){
+        if(first_time_ || move_base_client_.getState() == actionlib::SimpleClientGoalState::PREEMPTED ||
+           move_base_client_.getState() == actionlib::SimpleClientGoalState::LOST){
             srv_exploration_destination.request.last_goal_succeded = srv_exploration_destination.request.UNKNOWN;
         }else if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
             srv_exploration_destination.request.last_goal_succeded = srv_exploration_destination.request.YES;

@@ -2,10 +2,10 @@ goal_reached_dist : 0.5
 max_frontier_count : 10
 use_inflated_obstacles : false
 inscribed_circle_radius_area: 100
-sensor_range: 2
+sensor_range: 0.5
 max_laser_readings_count: 721
 model_parameters:
-  learning_rate: 0.01
+  learning_rate: 0.001
   discount_factor: 0.1
   activation: 'tanh'
   epsilon-greedy: true

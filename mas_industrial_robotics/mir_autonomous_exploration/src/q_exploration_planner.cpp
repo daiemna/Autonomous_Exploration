@@ -101,7 +101,7 @@ public:
       unsigned int dist_cell = costmap_->cellDistance((double)distance_travled);
       ROS_DEBUG("distance travled %u", dist_cell);
 
-      float area_covered = (sensor_range_cell * dist_cell) +
+      float area_covered = (2 * sensor_range_cell * dist_cell) +
                            (M_PI * sensor_range_cell*sensor_range_cell);
       ROS_DEBUG("area_covered : %f", area_covered);
       // rewad = (known_area - last_know_area_)/area_covered + 1/distance_travled;
@@ -115,7 +115,7 @@ public:
       else
         exploration_srv.request.lastReward = 0.0;
 
-      if((known_area - last_know_area_) > 0.0 && exploration_srv.request.lastReward >= 0.0){
+      if((known_area - last_know_area_) > 0.0 /*&& exploration_srv.request.lastReward >= 0.0*/){
           exploration_srv.request.lastReward += (known_area - last_know_area_)/area_covered;
       }
       // if(dist_cell > 2){
