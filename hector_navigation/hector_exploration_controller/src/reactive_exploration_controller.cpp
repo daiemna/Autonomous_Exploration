@@ -114,11 +114,12 @@ public:
           ROS_WARN("Service call for exploration service failed");
         }
 
-    }else if(another_goal_running){
-      ROS_INFO("Waiting for other goal to finish!");
-      return;
     }else{
       ROS_DEBUG("Still Executing Plan!");
+    }
+    if(another_goal_running){
+      ROS_INFO("Waiting for other goal to finish!");
+      return;
     }
   }
   void checkForOtherGoals(actionlib_msgs::GoalStatusArray goals_status_array){
