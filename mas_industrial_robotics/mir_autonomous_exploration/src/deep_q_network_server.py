@@ -20,7 +20,7 @@ class QAgentServer:
             rospy.init_node(name)
         self.inscribed_circle_frontier_radius = rospy.get_param("~inscribed_circle_radius_area", 5)
         self.cluster_count = rospy.get_param("~max_frontier_count", 10)
-        # self.laser_readings_count = rospy.get_param("~max_laser_readings_count", 721)
+        self.laser_readings_count = rospy.get_param("~max_laser_readings_count", 721)
         learning_rate = rospy.get_param("~model_parameters/learning_rate", 1)
         discount_factor = rospy.get_param("~model_parameters/discount_factor", 1)
         activation = rospy.get_param("~model_parameters/activation", 'sigmoid')
@@ -28,20 +28,22 @@ class QAgentServer:
         rospy.logdebug("model param : %s", str([activation,discount_factor, learning_rate, rand_action]))
         # self.cnn_input_count = (0,0,0)
 
-        # self.cnn_input_count += 2 * self.cluster_count # frontier poses.
-        self.cnn_input_count = (self.inscribed_circle_frontier_radius * 2, self.inscribed_circle_frontier_radius * 2, self.cluster_count)# frontier areas.
-        # self.cnn_input_count += 2 # robot pose.
-        # self.cnn_input_count += self.laser_readings_count # laser readings.
 
+        self.cnn_input_count = (self.inscribed_circle_frontier_radius * 2, self.inscribed_circle_frontier_radius * 2, self.cluster_count)# frontier areas.
+        self.nn_input_count = 2 # robot pose.
+        self.nn_input_count += 2 * self.cluster_count # frontier poses.
+        self.nn_input_count += self.laser_readings_count # laser readings.
+        self.nn_input_count = (self.nn_input_count,)
         rospy.loginfo("cnn_input_count : %s", str(self.cnn_input_count))
-        self.agent= DeepQAgent(state_size=self.cnn_input_count,
+        self.agent= DeepQAgent(state_size=[self.cnn_input_count, self.nn_input_count],
                                number_of_actions=self.cluster_count,
                                learning_rate=learning_rate,
                                discount=discount_factor,
                                mbsz=10,
                                save_freq=1,
                                random_episodes=2000,
-                               layers=[[20,8,5,'relu'],[20,6,2,'relu'],[250,activation]])
+                               cnn_layers=[[20,8,5,'relu'],[20,6,2,'relu'],[200,activation]],
+                               nn_layers=[[100, 'relu']])
         self.agent.log["debug"] = rospy.logdebug
         self.agent.log["info"] = rospy.loginfo
         self.last_state = None
@@ -53,16 +55,19 @@ class QAgentServer:
 
     def handel_dqn_calls(self, request):
         response = DQNExplorationServiceResponse()
-        state = np.zeros(self.cnn_input_count)
+        cnn_ip = np.zeros(self.cnn_input_count)
+        nn_ip = tuple()
         action_index = -1
-        # for pose in request.frontierPoses:
-        #     state += (pose.position.x, pose.position.y)
         for i,area in enumerate(request.areas):
-            state[:,:,i] = np.array(area.data).reshape((self.cnn_input_count[0], self.cnn_input_count[1]))
-        # state += (request.robotPose.position.x, request.robotPose.position.y)
-        # state += request.laserRanges
-        # state = np.array(state)
-        logdebug("state : \n%s", str(state.shape))
+            cnn_ip[:,:,i] = np.array(area.data).reshape((self.cnn_input_count[0], self.cnn_input_count[1]))
+
+        for pose in request.frontierPoses:
+            nn_ip += (pose.position.x, pose.position.y)
+        nn_ip += (request.robotPose.position.x, request.robotPose.position.y)
+        nn_ip += request.laserRanges
+        state = [cnn_ip[None, :], np.array(nn_ip)[None, :]]
+        logdebug("cnn input : \n%s", str(state[0].shape))
+        logdebug("nn input : \n%s", str(state[1].shape))
 
 
 
