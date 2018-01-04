@@ -13,21 +13,19 @@
   <remap from="map" to="/new_map"/> -->
 
   <!-- enable following lines to do NearestFrontier Exploration -->
-  <!-- <include file="$(find hector_exploration_node)/launch/exploration_planner.launch"/>
-  <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/> -->
+  <include file="$(find hector_exploration_node)/launch/exploration_planner.launch"/>
+  <include file="$(find hector_exploration_controller)/launch/reactive_controller.launch"/>
 
   <!-- enable following lines to do Q_Learned Exploration -->
-  <include file="$(find mir_autonomous_exploration)/launch/q_network_server.launch"/>
+  <!-- <include file="$(find mir_autonomous_exploration)/launch/q_network_server.launch"/>
   <include file="$(find mir_autonomous_exploration)/launch/q_exploration_planner.launch"/>
-  <include file="$(find mir_autonomous_exploration)/launch/reactive_controller.launch"/>
+  <include file="$(find mir_autonomous_exploration)/launch/reactive_controller.launch"/> -->
 
-  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+  <!-- <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
   </node>
-
   <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
   <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
     <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
     <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
-    <!-- <param name='sim_time_str' value="$(optenv SIM_TIME none)" /> -->
-  </node>
+  </node> -->
 </launch>

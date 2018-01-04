@@ -84,9 +84,9 @@ public:
   bool getObservationPose(const geometry_msgs::PoseStamped& observation_pose, const double desired_distance, geometry_msgs::PoseStamped& new_observation_pose);
 
   bool doAlternativeExploration(const geometry_msgs::PoseStamped &start,std::vector<geometry_msgs::PoseStamped> &plan, std::vector<geometry_msgs::PoseStamped> &oldplan);
-  bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers, std::vector<geometry_msgs::PoseStamped> &noFrontiers);
+  bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers, std::vector<geometry_msgs::PoseStamped> &noFrontiers,const geometry_msgs::PoseStamped = geometry_msgs::PoseStamped());
+  bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers, const geometry_msgs::PoseStamped = geometry_msgs::PoseStamped());
   bool findFrontiersCloseToPath(std::vector<geometry_msgs::PoseStamped> &frontiers);
-  bool findFrontiers(std::vector<geometry_msgs::PoseStamped> &frontiers);
   bool findInnerFrontier(std::vector<geometry_msgs::PoseStamped> &innerFrontier);
   float angleDifferenceWall(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal);
   bool exploreWalls(const geometry_msgs::PoseStamped &start, std::vector<geometry_msgs::PoseStamped> &goals);
@@ -129,8 +129,8 @@ private:
   bool isFrontierReached(int point);
   bool isSameFrontier(int frontier_point1,int frontier_point2);
   bool is_in_range(int point1, int point2, const int range);
-  double get_distance(int point1, int point2, bool get_sq_dist);
-  double get_cell_distance(int point1, int point2, bool get_sq_dist);
+  double get_distance(int point1, int point2, bool = false);
+  double get_cell_distance(int point1, int point2, bool = false);
 
   void getStraightPoints(int point, int points[]);
   void getDiagonalPoints(int point, int points[]);
@@ -165,6 +165,7 @@ private:
 
   bool initialized_;
   int previous_goal_;
+  std::vector<int> oldFrontiers;
 
   std::string name;
   unsigned int cluster_image_counter;
@@ -180,6 +181,7 @@ private:
   bool p_plan_in_unknown_;
   bool p_explore_close_to_path_;
   bool p_benifit_exploration;
+  bool p_fast_frontier_detection;
   bool p_use_inflated_obs_;
   int p_goal_angle_penalty_;
   int p_min_obstacle_dist_;
