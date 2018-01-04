@@ -1,0 +1,17 @@
+name: ros_keras
+channels:
+- defaults
+dependencies:
+- python=2.7
+- pip:
+    - rospkg
+    - rosdep
+    - rosinstall
+    - vcstools
+    - keras
+    - tensorflow
+    - numpy
+    - scipy
+    - scikit-learn
+    - pillow
+    - h5py

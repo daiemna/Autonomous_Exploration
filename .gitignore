@@ -10,5 +10,5 @@
 # docker files
 clear_docker.sh
 
-# FTP
+# sftp
 deployment-config.json

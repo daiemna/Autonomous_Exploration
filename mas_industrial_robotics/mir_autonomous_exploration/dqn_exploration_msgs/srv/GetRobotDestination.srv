@@ -1,0 +1,6 @@
+uint8 UNKNOWN=10
+uint8 YES=20
+uint8 NO=30
+uint8 last_goal_succeded
+---
+geometry_msgs/PoseStamped destination
