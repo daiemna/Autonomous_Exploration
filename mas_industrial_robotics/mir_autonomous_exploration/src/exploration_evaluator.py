@@ -75,7 +75,6 @@ class ExplorationEvaluator:
         if not os.path.isdir(self.bag_path):
             logdebug("path does not exisit! %s", self.bag_path)
             os.mkdir(self.bag_path)
-
         if self.sim_time_string == 'none':
             self.sim_time_string = dt.datetime.now().strftime("%d%m%Y_%H%M%S")
         self.csv_save_path = os.path.join(self.csv_save_path,

@@ -1,0 +1,20 @@
+# Request: State of the environment.
+# 0) Header, Number of frontier(Constant).
+# 1) frontier poses.
+# 2) Area Around Each Frontier
+# 3) robot pose
+# 4) Laser Range Values.
+
+std_msgs/Header header
+uint8 frontierCount
+geometry_msgs/Pose[] frontierPoses
+FrontierArea[] areas
+geometry_msgs/Pose robotPose
+float32[] laserRanges
+float32 lastReward
+
+---
+
+# Response : Selected Frontier.
+
+uint8 action

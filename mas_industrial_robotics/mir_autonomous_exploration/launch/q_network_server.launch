@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- <node pkg="mir_autonomous_exploration" type="q_network_server.py" name="q_network_server" output="screen">
+    <rosparam file="$(find mir_autonomous_exploration)/config/dqn_config.yml" command="load"/>
+  </node> -->
+
+  <node pkg="mir_autonomous_exploration" type="deep_q_network_server.py" name="deep_q_network_server" output="screen">
+    <rosparam file="$(find mir_autonomous_exploration)/config/dqn_config.yml" command="load"/>
+  </node>
+  
+</launch>
