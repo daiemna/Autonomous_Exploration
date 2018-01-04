@@ -2,4 +2,24 @@ save_path: 'saved_csv'
 data_save_duration: 1
 distance_precesion: 3
 map_path: 'saved_map'
-sim_time_str: 'none'
+bag_path: 'saved_bags'
+recorded_topics:
+   - /tf
+   - /tf_static
+   - /scan_rear
+   - /scan_front
+   - /map
+   - /odom
+   - /cmd_vel
+   - /scan_unified
+   - /slam_gmapping/entropy
+   - /robot_pose
+   - /move_base/goal
+   - /move_base/status
+   - /move_base/result
+   - /move_base/global_costmap/costmap
+   - /move_base/global_costmap/costmap_updates
+   - /move_base/global_costmap/footprint
+   - /exploration_path
+   - /hector_exploration_node/hector_exploration_planner/cluster_image
+   - /hector_exploration_node/hector_exploration_planner/frontiers

@@ -29,7 +29,7 @@
 		<param name="srt" value="0.2"/>						<!-- Odometry error in translation as a function of rotation (rho/theta) -->
 		<param name="str" value="0.1"/>						<!-- Odometry error in rotation as a function of translation (theta/rho) -->
 		<param name="stt" value="0.2"/>						<!-- Odometry error in rotation as a function of rotation (theta/theta) -->
-		<param name="linearUpdate" value="0.05"/>				<!-- Process a scan each time the robot translates this far -->
+		<param name="linearUpdate" value="0.1"/>				<!-- Process a scan each time the robot translates this far -->
 		<param name="angularUpdate" value="1.07"/>		<!-- Process a scan each time the robot rotates this far -->
 		<param name="temporalUpdate" value="-1.0"/>				<!-- Process a scan if the last scan proccessed is older than the update time in seconds. A value less than zero will turn time based updates off -->
 		<param name="resampleThreshold" value="0.5"/>			<!-- The neff based resampling threshold -->

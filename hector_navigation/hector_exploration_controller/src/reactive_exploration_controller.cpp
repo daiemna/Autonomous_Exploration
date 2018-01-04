@@ -32,7 +32,8 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseResult.h>
 #include <actionlib/client/simple_action_client.h>
-
+#include <actionlib_msgs/GoalStatusArray.h>
+#include <actionlib_msgs/GoalStatus.h>
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 class ReactiveExplorationController
@@ -42,16 +43,25 @@ public:
   move_base_client_("move_base",true)
   {
     ros::NodeHandle nh;
+    ros::NodeHandle pnh("~");
     // move_base_client_ = nh.serviceClient<nav_msgs::GetPlan>()
     while(!move_base_client_.waitForServer(ros::Duration(1.0))){
       ROS_INFO("Waiting for the move_base action server to come up");
     }
     first_time_ = true;
     goal_id_ = 0;
+    p_restart_on_preempt_goal = true;
+    pnh.getParam("restart_on_prempt_goal", p_restart_on_preempt_goal);
+    if(p_restart_on_preempt_goal){
+      ROS_WARN_STREAM("Not restarting exploration on goal preemption");
+      move_base_status_sub_ = nh.subscribe("/move_base/status",1,&ReactiveExplorationController::checkForOtherGoals,this);
+    }
+    another_goal_running = false;
     exploration_plan_generation_timer_ = nh.createTimer(ros::Duration(1.0), &ReactiveExplorationController::timerPlanExploration, this, false );
 
     exploration_plan_service_client_ = nh.serviceClient<hector_nav_msgs::GetRobotTrajectory>("get_exploration_path");
     first_aborted_goal_id = -1;
+
     // path_follower_.initialize(&tfl_);
     // cmd_vel_generator_timer_ = nh.createTimer(ros::Duration(0.1), &ReactiveExplorationController::timerCmdVelGeneration, this, false );
     // vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 10);
@@ -62,10 +72,12 @@ public:
   {
     hector_nav_msgs::GetRobotTrajectory srv_exploration_plan;
     move_base_msgs::MoveBaseGoal goal;
-    ROS_DEBUG_STREAM("move base state rejected: " << move_base_client_.getState().toString());
+    ROS_DEBUG_STREAM("move base state : " << move_base_client_.getState().toString());
+    ROS_DEBUG_STREAM("another_goal_running : " << (another_goal_running? "YES":"NO"));
     if(move_base_client_.getState() == actionlib::SimpleClientGoalState::SUCCEEDED ||
        move_base_client_.getState() == actionlib::SimpleClientGoalState::ABORTED ||
-       first_time_){
+       (move_base_client_.getState() == actionlib::SimpleClientGoalState::PREEMPTED && !another_goal_running)||
+       first_time_ ){
         first_time_ = false;
         if(move_base_client_.getState() == actionlib::SimpleClientGoalState::ABORTED &&
            first_aborted_goal_id < 0){
@@ -94,29 +106,39 @@ public:
           ROS_DEBUG_STREAM("goal sequence # : " << goal.target_pose.header.seq);
           ++goal_id_;
           goal.target_pose.header.stamp = ros::Time::now();
-          // ROS_DEBUG_STREAM("target_pose header stamp : " << goal.target_pose.header.stamp);
+          // ROS_DEBUG_STREAM("targctor_exploration_controller=DEBUG
+          ROS_DEBUG_STREAM("goal time stamp" << goal.target_pose.header.stamp);
 
           move_base_client_.sendGoal(goal);
         }else{
           ROS_WARN("Service call for exploration service failed");
         }
 
+    }else if(another_goal_running){
+      ROS_INFO("Waiting for other goal to finish!");
+      return;
     }else{
       ROS_DEBUG("Still Executing Plan!");
     }
   }
+  void checkForOtherGoals(actionlib_msgs::GoalStatusArray goals_status_array){
+    std::string node_name = ros::this_node::getName();
+    // ROS_DEBUG_STREAM("Node name is : " << node_name);
 
-  // void timerCmdVelGeneration(const ros::TimerEvent& e)
-  // {
-  //   geometry_msgs::Twist twist;
-  //   path_follower_.computeVelocityCommands(twist);
-  //   vel_pub_.publish(twist);
-  // }
-
-
+    for(int i = 0; i < goals_status_array.status_list.size(); i++){
+      actionlib_msgs::GoalStatus status = goals_status_array.status_list[i];
+      ROS_DEBUG_STREAM("found id : " << status.goal_id.id << " status : " << (int)status.status);
+      if((status.goal_id.id.find(node_name) != 0) && status.status == (char)1){
+        // ROS_DEBUG_STREAM("Found another id running : " << status.goal_id.id);
+        another_goal_running = true;
+        return;
+      }
+    }
+    another_goal_running = false;
+  }
 protected:
   ros::ServiceClient exploration_plan_service_client_;
-  // ros::Publisher vel_pub_;
+  ros::Subscriber move_base_status_sub_;
 
   // tf::TransformListener tfl_;
 
@@ -126,6 +148,8 @@ protected:
   // ros::Timer cmd_vel_generator_timer_;
   MoveBaseClient move_base_client_;
   bool first_time_;
+  bool another_goal_running;
+  bool p_restart_on_preempt_goal;
   unsigned int goal_id_;
   int first_aborted_goal_id;
 };

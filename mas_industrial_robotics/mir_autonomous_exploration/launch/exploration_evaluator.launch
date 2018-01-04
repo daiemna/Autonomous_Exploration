@@ -8,6 +8,5 @@
   <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
     <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
     <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
-
   </node>
 </launch>

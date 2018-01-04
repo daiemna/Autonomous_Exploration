@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <include file="$(find mir_bringup_sim)/robot.launch"/>
+  <!-- <include file="$(find mir_bringup)/robot.launch"/> -->
   <include file="$(find mir_2dslam)/ros/launch/2dslam.launch" />
 
   <!-- enable following lines to add VirtualObstacleBuilder. -->
@@ -21,11 +21,11 @@
   <include file="$(find mir_autonomous_exploration)/launch/q_exploration_planner.launch"/>
   <include file="$(find mir_autonomous_exploration)/launch/reactive_controller.launch"/> -->
 
-  <!-- <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
+  <node pkg="robot_pose_publisher" type="robot_pose_publisher" name="pose_publisher">
   </node>
   <rosparam file="$(find mir_autonomous_exploration)/config/config.yml" command="load" ns="exploration_evaluator"/>
   <node pkg="mir_autonomous_exploration" type="exploration_evaluator.py" name="exploration_evaluator" output="screen">
     <remap from="global_costmap" to="/move_base/global_costmap/costmap"/>
     <remap from="global_costmap_updates" to="/move_base/global_costmap/costmap_updates"/>
-  </node> -->
+  </node>
 </launch>

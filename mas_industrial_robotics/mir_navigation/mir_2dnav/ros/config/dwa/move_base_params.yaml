@@ -25,4 +25,3 @@ GlobalPlannerWithOrientations:
     # Only for global planner with orientations:
     min_pose_distance: 0.05             # Minimum distance between poses
     max_omni_poses: 20                  # Maximum omni poses to drive (2 times start and end, so max. poses in omni will be 40)
-
