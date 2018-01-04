@@ -58,7 +58,7 @@ HectorExplorationPlanner::~HectorExplorationPlanner(){
 }
 
 HectorExplorationPlanner::HectorExplorationPlanner(std::string name, costmap_2d::Costmap2DROS *costmap_ros_in) :
-costmap_ros_(NULL), initialized_(false) {
+costmap_ros_(NULL), initialized_(false){
   HectorExplorationPlanner::initialize(name, costmap_ros_in);
 }
 
@@ -83,7 +83,6 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
   ros::NodeHandle nh;
   // visualization_pub_ = private_nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   ROS_DEBUG("Initilizing oldfrontier vector!");
-  oldFrontiers = std::vector<int>(0);
   oldFrontiers.clear();
 
   observation_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("observation_pose", 1, true);
