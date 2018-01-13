@@ -34,6 +34,8 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PolygonStamped.h>
+#include <geometry_msgs/Point32.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
@@ -148,6 +150,7 @@ private:
   ros::Publisher goal_pose_pub_;
   // ros::Publisher visualization_pub_;
   ros::Publisher frontier_pub_;
+  ros::Publisher scan_area_pub_;
   ros::Publisher cluster_pub_;
   ros::Publisher exploration_trans_pub_;
 

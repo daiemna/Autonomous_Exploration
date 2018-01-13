@@ -83,11 +83,12 @@ void HectorExplorationPlanner::initialize(std::string name, costmap_2d::Costmap2
   ros::NodeHandle nh;
   // visualization_pub_ = private_nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   ROS_DEBUG("Initilizing oldfrontier vector!");
-  oldFrontiers.clear();
+  // oldFrontiers.clear();
 
   observation_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("observation_pose", 1, true);
   goal_pose_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("goal_pose", 1, true);
   frontier_pub_ = private_nh_.advertise<geometry_msgs::PoseArray>("frontiers", 1, true);
+  scan_area_pub_ = private_nh_.advertise<geometry_msgs::PolygonStamped>("frontier_search_polygon", 1, true);
   cluster_pub_ = private_nh_.advertise<sensor_msgs::Image>("cluster_image", 1, true);
   cluster_image_counter = 0;
 
@@ -1309,6 +1310,7 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
     wx = robotPose.pose.position.x;
     wy = robotPose.pose.position.y;
     costmap_->worldToMap(wx, wy, robot_x, robot_y);
+
     int start_x = robot_x - p_sensor_range_;
     int start_y = robot_y - p_sensor_range_;
     int end_x = robot_x + p_sensor_range_;
@@ -1330,6 +1332,24 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
           }
         }
     }
+
+    // if(scan_area_pub_.getNumSubscribers() > 0){
+    //   geometry_msgs::PolygonStamped poly_msg;
+    //   poly_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+    //   poly_msg.polygon.points.reserve(4);
+    //   poly_msg.polygon.points[0].x = (float)start_x;
+    //   poly_msg.polygon.points[0].y = (float)start_y;
+    //
+    //   poly_msg.polygon.points[1].x = (float)end_x;
+    //   poly_msg.polygon.points[1].y = (float)start_y;
+    //
+    //   poly_msg.polygon.points[2].x = (float)end_x;
+    //   poly_msg.polygon.points[2].y = (float)end_y;
+    //
+    //   poly_msg.polygon.points[3].x = (float)start_x;
+    //   poly_msg.polygon.points[3].y = (float)end_y;
+    //   scan_area_pub_.publish(poly_msg);
+    // }
   }else{
     // check for all cells in the occupancy grid whether or not they are frontier cells
     for(unsigned int i = 0; i < num_map_cells_; ++i){
