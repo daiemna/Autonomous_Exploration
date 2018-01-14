@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- <include file="$(find mir_bringup)/robot.launch"/> -->
+  <include file="$(find mir_bringup_sim)/robot.launch"/>
   <include file="$(find mir_2dslam)/ros/launch/2dslam.launch" />
 
   <!-- enable following lines to add VirtualObstacleBuilder. -->

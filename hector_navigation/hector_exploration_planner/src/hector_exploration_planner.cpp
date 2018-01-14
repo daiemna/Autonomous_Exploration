@@ -1333,23 +1333,33 @@ bool HectorExplorationPlanner::findFrontiers(std::vector<geometry_msgs::PoseStam
         }
     }
 
-    // if(scan_area_pub_.getNumSubscribers() > 0){
-    //   geometry_msgs::PolygonStamped poly_msg;
-    //   poly_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
-    //   poly_msg.polygon.points.reserve(4);
-    //   poly_msg.polygon.points[0].x = (float)start_x;
-    //   poly_msg.polygon.points[0].y = (float)start_y;
-    //
-    //   poly_msg.polygon.points[1].x = (float)end_x;
-    //   poly_msg.polygon.points[1].y = (float)start_y;
-    //
-    //   poly_msg.polygon.points[2].x = (float)end_x;
-    //   poly_msg.polygon.points[2].y = (float)end_y;
-    //
-    //   poly_msg.polygon.points[3].x = (float)start_x;
-    //   poly_msg.polygon.points[3].y = (float)end_y;
-    //   scan_area_pub_.publish(poly_msg);
-    // }
+    if(scan_area_pub_.getNumSubscribers() > 0){
+      geometry_msgs::PolygonStamped poly_msg;
+      poly_msg.header.frame_id = costmap_ros_->getGlobalFrameID();
+      geometry_msgs::Point32 point1,point2, point3, point4;
+
+      costmap_->mapToWorld((unsigned int)start_x, (unsigned int)start_y, wx, wy);
+      point1.x = (float)wx;
+      point1.y = (float)wy;
+      poly_msg.polygon.points.push_back(point1);
+
+      costmap_->mapToWorld((unsigned int)end_x, (unsigned int)start_y, wx, wy);
+      point1.x = (float)wx;
+      point1.y = (float)wy;
+      poly_msg.polygon.points.push_back(point1);
+
+      costmap_->mapToWorld((unsigned int)end_x, (unsigned int)end_y, wx, wy);
+      point1.x = (float)wx;
+      point1.y = (float)wy;
+      poly_msg.polygon.points.push_back(point1);
+
+      costmap_->mapToWorld((unsigned int)start_x, (unsigned int)end_y, wx, wy);
+      point1.x = (float)wx;
+      point1.y = (float)wy;
+      poly_msg.polygon.points.push_back(point1);
+
+      scan_area_pub_.publish(poly_msg);
+    }
   }else{
     // check for all cells in the occupancy grid whether or not they are frontier cells
     for(unsigned int i = 0; i < num_map_cells_; ++i){
