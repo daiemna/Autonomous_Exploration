@@ -11,7 +11,19 @@ For running these algorithms look at launch file  "mas_industrial_robotics/mir_a
 
 For deep q-network implementation you need to know anaconda. environment file of anaconda is environment.yml . Also, docker files are available.
 
+
 ### References
 [1] Yan, Z., Fabresse, L., Laval, J., & Bouraqadi, N. (2015). Metrics for performance benchmarking of multi-robot exploration. IEEE International Conference on Intelligent Robots and Systems, 2015–Decem, 3407–3414.
 
 [2] Yamauchi, B. (1998). Frontier-based exploration using multiple robots. Proc. of the Second International Conference on Autonomous Agents, 47–53.
+
+### Citation
+
+@misc{daiem2018,
+  author = {Ali, Daiem Nadir},
+  title = {Autonommous Exploration for Mobile Robots},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/daiemna/Autonomous_Exploration}}
+}
