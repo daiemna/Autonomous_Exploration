@@ -19,6 +19,7 @@ For deep q-network implementation you need to know anaconda. environment file of
 
 ### Citation
 
+```
 @misc{daiem2018,
   author = {Ali, Daiem Nadir},
   title = {Autonommous Exploration for Mobile Robots},
@@ -27,3 +28,4 @@ For deep q-network implementation you need to know anaconda. environment file of
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/daiemna/Autonomous_Exploration}}
 }
+```
