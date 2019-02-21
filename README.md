@@ -1,25 +1,31 @@
-This is the repository for Research and Development Project "Autonomous Exploration for Mobile Robots"
+This is the repository for Research and Development Project "Autonomous Exploration for Mobile Robots". The complete system is based on ROS and Hochschule BRS Robocup @Work repository, we implemented some map exploration methods mentioned below:
 
-### Branch frontier_exploration
-## notes about hector exploration :
-- start from doExploration()
-- Frontier Cell: the cell has to be free but at least three of its neighbors need
-  to be unknown.
-- assign cost to all the frontiers and all the free cells in explored region (buildexploration_trans_array_)
-  - assign cost using breath first sequence in clock wise manner.
-  - cost of each frontier is 0 (can be euclidean distance from robot.)
-  - cost of each neighbor is cost of the parent cell + distance to nearest obstacle
-  - each free cell that is 4-connected to parent cell has less cost than
-    each free diagonal cell. reason for this is to avoid much turns during exploration
-- to find the trajectory to the frontier start from robots position.
-  - select a cell from 8-connected neighbor cells which reduces the cost most.
-  - add the cell to trajectory.
-  - repeat until you reach a frontier cell.
-- to do exploration near previous trajectory.
-  - add each pose of trajectory as frontier and the call buildexploration_trans_array_ to assign cost.
-  - this will cause cost to increase outwards from trajectory.
+### Methods of Exploration:
+---
+- Nearest Frontier [2] [Hector_navigation](https://github.com/tu-darmstadt-rospkg/hector_navigation)
+- Nearest Cluster
+- Cost-Utility [1]
+- Deep Q-Network
 
-## TODO(s):
-- robot voilated the obstacle wile path following boundaries change that.
-  - possible solution is to check unified range sensor data for proximity and abandon the plan.
-  -
+For running these algorithms look at launch file  "mas_industrial_robotics/mir_autonomous_exploration/launch/autonomous_exploration_sim.launch" . Also, run *rqt_reconfigure* and go to *hector_exploration_planner* settings for changing exploration behavior. You can change exploration behavior from frontier exploration to Cluster Exploration or to cost-utility exploration.
+
+For deep q-network implementation you need to know anaconda. environment file of anaconda is environment.yml . Also, docker files are available.
+
+
+### References
+[1] Yan, Z., Fabresse, L., Laval, J., & Bouraqadi, N. (2015). Metrics for performance benchmarking of multi-robot exploration. IEEE International Conference on Intelligent Robots and Systems, 2015–Decem, 3407–3414.
+
+[2] Yamauchi, B. (1998). Frontier-based exploration using multiple robots. Proc. of the Second International Conference on Autonomous Agents, 47–53.
+
+### Citation
+
+```
+@misc{daiem2018,
+  author = {Ali, Daiem Nadir},
+  title = {Autonommous Exploration for Mobile Robots},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/daiemna/Autonomous_Exploration}}
+}
+```
